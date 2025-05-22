@@ -8,7 +8,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/product-categories") // URL base para las categorías de productos
+@RequestMapping("/api/product-categories")
+@CrossOrigin(origins = "http://localhost:5173")
 public class ProductCategoryController {
 
     private final ProductCategoryService productCategoryService;

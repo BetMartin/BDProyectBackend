@@ -19,4 +19,27 @@ public class InvoiceDetail {
     private ProductSizes productSize;
 
     private Integer quantity;
+
+    //Producto vendido
+    public Product getProduct() {
+        return productSize.getProduct();
+    }
+
+    //Cambiar stock de ProductSize
+    public ProductStock actualizarStock() {
+        ProductSizes productoTalle = this.getProductSize();
+        Integer stockActual = productoTalle.stockActualProductSize();
+
+        if (stockActual < this.quantity) {
+            throw new IllegalStateException("Stock insuficiente para realizar la venta");
+        }
+
+        ProductStock nuevoStock = new ProductStock();
+        nuevoStock.setProductSize(productoTalle);
+        nuevoStock.setDate(this.getInvoice().getDate());
+        nuevoStock.setStock(stockActual - this.quantity);
+
+        return nuevoStock;
+    }
+
 }

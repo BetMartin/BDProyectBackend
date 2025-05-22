@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SizeDTO {
+public class ProductSizeDTO {
     private Long id;
     private int size;
 }

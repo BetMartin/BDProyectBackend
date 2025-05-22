@@ -32,4 +32,9 @@ public class User {
             throw new RuntimeException("Error al encriptar la clave", e);
         }
     }
+
+    //Metodo para devolver el rol del usuario
+    public Rol getRol() {
+        return person.getRol();
+    }
 }

@@ -1,7 +1,6 @@
 package org.example.dto;
 
 import lombok.Data;
-
 import java.util.List;
 
 @Data
@@ -10,5 +9,4 @@ public class OrderDTO {
     private String fecha;
     private double total;
     private List<ProductDetailDTO> detalles;
-
 }

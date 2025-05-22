@@ -23,6 +23,9 @@ dependencies {
     testCompileOnly ("org.projectlombok:lombok:1.18.30")
     testAnnotationProcessor ("org.projectlombok:lombok:1.18.30")
 
+    //Sawgger
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
+
     //MercadoPago
     implementation("com.mercadopago:sdk-java:2.1.24")
 

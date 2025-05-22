@@ -1,19 +1,18 @@
 package org.example.service.ServiceInterface;
 
-import org.example.dto.SizeDTO;
-import org.example.entity.Size;
+import org.example.dto.ProductSizeDTO;
 
 import java.util.List;
 
 public interface SizeService {
 
-    List<SizeDTO> findAllDTO();
+    List<ProductSizeDTO> findAllDTO();
 
-    SizeDTO findDTOById(Long id);
+    ProductSizeDTO findDTOById(Long id);
 
-    SizeDTO create(SizeDTO sizeDTO);
+    ProductSizeDTO create(ProductSizeDTO productSizeDTO);
 
-    SizeDTO update(Long id, SizeDTO sizeDTO);
+    ProductSizeDTO update(Long id, ProductSizeDTO productSizeDTO);
 
     void delete(Long id);
 }

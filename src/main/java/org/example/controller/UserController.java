@@ -2,19 +2,39 @@ package org.example.controller;
 
 import org.example.dto.UserDTO;
 import org.example.service.ServiceInterface.UserService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("api/users")
+@CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
 
     private final UserService userService;
 
     public UserController(UserService userService) {
         this.userService = userService;
+    }
+
+    //Login usuario
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestParam String userName, @RequestParam String password) {
+        try {
+            UserDTO authenticatedUser = userService.authenticateUser(userName, password);
+
+            if (authenticatedUser != null) {
+                return ResponseEntity.ok(authenticatedUser);
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("Credenciales incorrectas. Por favor, verifique su nombre de usuario y contraseña.");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error durante la autenticación: " + e.getMessage());
+        }
     }
 
     // Obtener todos los usuarios

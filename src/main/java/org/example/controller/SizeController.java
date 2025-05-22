@@ -1,6 +1,6 @@
 package org.example.controller;
 
-import org.example.dto.SizeDTO;
+import org.example.dto.ProductSizeDTO;
 import org.example.service.ServiceInterface.SizeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -8,7 +8,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/sizes")
+@RequestMapping("api/sizes")
+@CrossOrigin(origins = "http://localhost:5173")
 public class SizeController {
 
     private final SizeService sizeService;
@@ -19,31 +20,31 @@ public class SizeController {
 
     // Obtener todos los tamaños
     @GetMapping
-    public ResponseEntity<List<SizeDTO>> getAllSizes() {
-        List<SizeDTO> sizes = sizeService.findAllDTO();
+    public ResponseEntity<List<ProductSizeDTO>> getAllSizes() {
+        List<ProductSizeDTO> sizes = sizeService.findAllDTO();
         return ResponseEntity.ok(sizes);
     }
 
     // Obtener un tamaño por ID
     @GetMapping("/{id}")
-    public ResponseEntity<SizeDTO> getSizeById(@PathVariable Long id) {
-        SizeDTO size = sizeService.findDTOById(id);
+    public ResponseEntity<ProductSizeDTO> getSizeById(@PathVariable Long id) {
+        ProductSizeDTO size = sizeService.findDTOById(id);
         return ResponseEntity.ok(size);
     }
 
     // Crear un nuevo tamaño
     @PostMapping
-    public ResponseEntity<SizeDTO> createSize(@RequestBody SizeDTO sizeDTO) {
+    public ResponseEntity<ProductSizeDTO> createSize(@RequestBody ProductSizeDTO productSizeDTO) {
         // Usar el método create del servicio
-        SizeDTO createdSize = sizeService.create(sizeDTO);
+        ProductSizeDTO createdSize = sizeService.create(productSizeDTO);
         return ResponseEntity.ok(createdSize);
     }
 
     // Actualizar un tamaño existente
     @PutMapping("/{id}")
-    public ResponseEntity<SizeDTO> updateSize(@PathVariable Long id, @RequestBody SizeDTO sizeDTO) {
+    public ResponseEntity<ProductSizeDTO> updateSize(@PathVariable Long id, @RequestBody ProductSizeDTO productSizeDTO) {
         // Usar el método update del servicio
-        SizeDTO updatedSize = sizeService.update(id, sizeDTO);
+        ProductSizeDTO updatedSize = sizeService.update(id, productSizeDTO);
         return ResponseEntity.ok(updatedSize);
     }
 

@@ -1,10 +1,7 @@
 package org.example.service.impl;
 
 import jakarta.persistence.EntityNotFoundException;
-import org.example.dto.OrderDTO;
-import org.example.dto.ProductDTO;
-import org.example.dto.ProductDetailDTO;
-import org.example.dto.SizeDTO;
+import org.example.dto.*;
 import org.example.entity.*;
 import org.example.Repository.*;
 import org.example.service.ServiceInterface.ProductService;
@@ -61,30 +58,72 @@ public class ProductServiceImpl implements ProductService {
         productDTO.setDescription(product.getDescription());
 
         // Buscar el precio más reciente
-        productDTO.setPrice(historicalPriceRepository.findLatestPriceByProductId(product.getId())
+        Double latestPrice = historicalPriceRepository.findLatestPriceByProductId(product.getId())
                 .map(HistoricalPrice::getPrice)
-                .orElse(null));
+                .orElse(null);
+        productDTO.setPrice(latestPrice != null ? latestPrice.toString() : null);
 
-        // Sumar la cantidad total vendida
-        productDTO.setQuantitySold(invoiceDetailRepository.findTotalQuantitySoldByProductId(product.getId()));
+        // Configurar la categoría
+        if (product.getProductCategory() != null) {
+            ProductCategoryDTO categoryDTO = new ProductCategoryDTO();
+            categoryDTO.setId(product.getProductCategory().getId());
+            categoryDTO.setName(product.getProductCategory().getName());
+            productDTO.setCategory(categoryDTO);
+        }
 
         // Obtener los tamaños asociados al producto
-        List<SizeDTO> sizes = productSizesRepository.findSizesByProductId(product.getId())
+        List<ProductSizeDTO> sizes = productSizesRepository.findSizesByProductId(product.getId())
                 .stream()
-                .map(this::convertToSizeDTO)
+                .map(size -> {
+                    ProductSizeDTO sizeDTO = new ProductSizeDTO();
+                    sizeDTO.setId(size.getId());
+                    sizeDTO.setSize(size.getSizeNumber());
+                    return sizeDTO;
+                })
                 .collect(Collectors.toList());
-        productDTO.setSize(sizes);
+        productDTO.setSizes(sizes);
 
-        // Obtener los detalles de las órdenes
-        List<Invoice> invoices = invoiceDetailRepository.findInvoicesByProductId(product.getId());
-        productDTO.setOrderDetail(
-                invoices.stream()
-                        .map(this::convertToProductDetailDTO)
-                        .collect(Collectors.toList())
-        );
+//        // Obtener los detalles de producto
+//        List<ProductDetailDTO> productDetails = invoiceDetailRepository.findInvoicesByProductId(product.getId())
+//                .stream()
+//                .map(invoice -> {
+//                    ProductDetailDTO detailDTO = new ProductDetailDTO();
+//                    detailDTO.setId(invoice);
+//                    detailDTO.setQuantity(productDetails.getQuantity());
+//                    detailDTO.setSubtotal(invoice.getSubtotal());
+//
+//                    // Crear y configurar ProductStock
+//                    ProductStockDTO stockDTO = new ProductStockDTO();
+//                    stockDTO.setId(invoice.getProductStock().getId());
+//                    stockDTO.setStock(invoice.getProductStock().getStock());
+//                    stockDTO.setProduct(productDTO); // Referencia circular al producto actual
+//
+//                    // Configurar el tamaño en ProductStock
+//                    ProductSizeDTO sizeDTO = new ProductSizeDTO();
+//                    sizeDTO.setId(invoice.getProductStock().getSize().getId());
+//                    sizeDTO.setSize(invoice.getProductStock().getSize().getSize());
+//                    stockDTO.setSize(sizeDTO);
+//
+//                    detailDTO.setProductStock(stockDTO);
+//
+//                    // Configurar Order si existe
+//                    if (invoice.getOrder() != null) {
+//                        OrderDTO orderDTO = new OrderDTO();
+//                        orderDTO.setId(invoice.getOrder().getId());
+//                        orderDTO.setFecha(invoice.getOrder().getFecha());
+//                        orderDTO.setTotal(invoice.getOrder().getTotal());
+//                        detailDTO.setOrder(orderDTO);
+//                    }
+//
+//                    return detailDTO;
+//                })
+//                .collect(Collectors.toList());
+//        productDTO.setProductDetail(productDetails);
 
         return productDTO;
     }
+
+
     @Override
     public ProductDTO create(ProductDTO productDTO) {
         if (productDTO == null) {
@@ -106,22 +145,9 @@ public class ProductServiceImpl implements ProductService {
         if (productDTO.getPrice() != null) {
             HistoricalPrice historicalPrice = new HistoricalPrice();
             historicalPrice.setProduct(savedProduct);
-            historicalPrice.setPrice(productDTO.getPrice());
+            historicalPrice.setPrice(Double.valueOf(productDTO.getPrice()));
             historicalPrice.setDate(LocalDate.from(java.time.LocalDateTime.now()));
             historicalPriceRepository.save(historicalPrice);
-        }
-
-        // Guardar los tamaños si existen
-        if (productDTO.getSize() != null && !productDTO.getSize().isEmpty()) {
-            productDTO.getSize().forEach(sizeDTO -> {
-                ProductSizes productSize = new ProductSizes();
-                productSize.setProduct(savedProduct);
-                // Aquí asumimos que tienes una forma de obtener o crear el Size
-                Size size = new Size();
-                size.setSizeNumber(sizeDTO.getSize());
-                productSize.setSize(size);
-                productSizesRepository.save(productSize);
-            });
         }
 
         return toDTO(savedProduct);
@@ -137,11 +163,11 @@ public class ProductServiceImpl implements ProductService {
 
     }
 
-    private SizeDTO convertToSizeDTO(Size size) {
-        SizeDTO sizeDTO = new SizeDTO();
-        sizeDTO.setId(size.getId());
-        sizeDTO.setSize(size.getSizeNumber());
-        return sizeDTO;
+    private ProductSizeDTO convertToSizeDTO(Size size) {
+        ProductSizeDTO productSizeDTO = new ProductSizeDTO();
+        productSizeDTO.setId(size.getId());
+        productSizeDTO.setSize(size.getSizeNumber());
+        return productSizeDTO;
     }
 
     private OrderDTO convertToInvoiceDTO(Invoice invoice) {

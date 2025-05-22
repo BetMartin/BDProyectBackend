@@ -1,7 +1,7 @@
 package org.example.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.example.dto.SizeDTO;
+import org.example.dto.ProductSizeDTO;
 import org.example.entity.Size;
 import org.example.Repository.SizeRepository;
 import org.example.service.ServiceInterface.SizeService;
@@ -20,7 +20,7 @@ public class SizeServiceImpl implements SizeService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<SizeDTO> findAllDTO() {
+    public List<ProductSizeDTO> findAllDTO() {
         return sizeRepository.findAll()
                 .stream()
                 .map(this::toDTO)
@@ -29,23 +29,23 @@ public class SizeServiceImpl implements SizeService {
 
     @Override
     @Transactional(readOnly = true)
-    public SizeDTO findDTOById(Long id) {
+    public ProductSizeDTO findDTOById(Long id) {
         return sizeRepository.findById(id)
                 .map(this::toDTO)
                 .orElseThrow(() -> new RuntimeException("Talla no encontrada con id: " + id));
     }
 
     @Override
-    public SizeDTO create(SizeDTO sizeDTO) {
-        Size size = toEntity(sizeDTO);
+    public ProductSizeDTO create(ProductSizeDTO productSizeDTO) {
+        Size size = toEntity(productSizeDTO);
         return toDTO(sizeRepository.save(size));
     }
 
     @Override
-    public SizeDTO update(Long id, SizeDTO sizeDTO) {
+    public ProductSizeDTO update(Long id, ProductSizeDTO productSizeDTO) {
         return sizeRepository.findById(id)
                 .map(existingSize -> {
-                    existingSize.setSizeNumber(sizeDTO.getSize());
+                    existingSize.setSizeNumber(productSizeDTO.getSize());
                     return toDTO(sizeRepository.save(existingSize));
                 })
                 .orElseThrow(() -> new RuntimeException("Talla no encontrada con id: " + id));
@@ -59,16 +59,16 @@ public class SizeServiceImpl implements SizeService {
         sizeRepository.deleteById(id);
     }
 
-    private SizeDTO toDTO(Size size) {
+    private ProductSizeDTO toDTO(Size size) {
         if (size == null) return null;
         
-        return SizeDTO.builder()
+        return ProductSizeDTO.builder()
                 .id(size.getId())
                 .size(size.getSizeNumber())
                 .build();
     }
 
-    private Size toEntity(SizeDTO dto) {
+    private Size toEntity(ProductSizeDTO dto) {
         if (dto == null) return null;
         
         return Size.builder()

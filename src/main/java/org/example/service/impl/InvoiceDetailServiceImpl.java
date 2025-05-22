@@ -29,7 +29,7 @@ public class InvoiceDetailServiceImpl implements InvoiceDetailService {
             detail.setQuantity(dto.getQuantity());
 
             // Encontrar el producto asociado a través de productSize
-            Product product = productRepository.findById(dto.getProduct().getId())
+            Product product = productRepository.findById(dto.getProductStock().getProduct().getId())
                     .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
             detail.getProductSize().setProduct(product);

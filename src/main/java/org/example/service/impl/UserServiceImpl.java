@@ -19,6 +19,21 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
     @Override
+    public UserDTO authenticateUser(String username, String password) {
+        return userRepository.findByUsername(username)
+                .filter(user -> validatePassword(password, user.getPassword()))
+                .map(this::toDTO)
+                .orElse(null);
+    }
+
+
+    private boolean validatePassword(String inputPassword, String storedPassword) {
+        String encryptedInputPassword = User.encriptarClave(inputPassword);
+        return encryptedInputPassword.equals(storedPassword);
+    }
+
+
+    @Override
     public List<UserDTO> findAll() {
         List<User> users = userRepository.findAll();
         return users.stream()
@@ -36,6 +51,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDTO create(UserDTO userDTO) {
         User user = toEntity(userDTO);
+        user.setUsername(userDTO.getUserName());
         user.setPassword(User.encriptarClave(user.getPassword()));
         User savedUser = userRepository.save(user);
         return toDTO(savedUser);
