@@ -8,7 +8,7 @@ public class Person {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    private int dni;
     private String firstName;
     private String lastName;
 
@@ -26,4 +26,5 @@ public class Person {
     @OneToOne
     @JoinColumn(name = "user_id")
     private User user;
+
 }

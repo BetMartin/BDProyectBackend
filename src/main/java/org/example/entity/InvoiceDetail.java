@@ -42,4 +42,9 @@ public class InvoiceDetail {
         return nuevoStock;
     }
 
+    //obtener el subtotal
+    public Double getSubtotal() {
+        return this.getProduct().precioActual() * this.getQuantity();
+    }
+
 }

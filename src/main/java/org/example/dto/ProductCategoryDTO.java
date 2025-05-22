@@ -9,5 +9,4 @@ public class ProductCategoryDTO {
     private Long id;
     private String name;
     private List<ProductDTO> products;
-
 }

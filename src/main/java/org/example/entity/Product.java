@@ -78,4 +78,14 @@ public class Product {
                 .collect(Collectors.toList());
     }
 
+    //obtener lista de factura detalle asociada
+    public List<InvoiceDetail> getInvoiceDetailsAsociadas() {
+        if (productSizes == null || productSizes.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return productSizes.stream()
+                .flatMap(productSize -> productSize.getInvoiceDetails().stream())
+                .distinct()
+                .collect(Collectors.toList());
+    }
 }

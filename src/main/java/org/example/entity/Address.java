@@ -17,4 +17,13 @@ public class Address {
     @ManyToOne
     @JoinColumn(name = "province_id")
     private Province province;
+
+    //Metodo para obtener direccion como string
+    public String getAddressStr() {
+        return String.format("%s %s %s. %s",
+                this.street,
+                this.streetNumber,
+                this.apartment,
+                this.province.getName());
+    }
 }
