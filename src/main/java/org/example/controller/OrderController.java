@@ -1,56 +1,54 @@
 package org.example.controller;
 
+import jakarta.validation.Valid;
 import org.example.dto.OrderDTO;
-import org.example.entity.Invoice;
-import org.example.service.ServiceInterface.InvoiceService;
+import org.example.service.InvoiceDetailService;
+import org.example.service.InvoiceService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("api/orders")
+@RequestMapping("/api/orders")
+@RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:5173")
 public class OrderController {
 
     private final InvoiceService invoiceService;
+    private final InvoiceDetailService invoiceDetailService;
 
-    public OrderController(InvoiceService invoiceService) {
-        this.invoiceService = invoiceService;
-    }
-
-    // Obtener todas las facturas
     @GetMapping
-    public ResponseEntity<List<Invoice>> getAllOrders() {
-        List<Invoice> invoices = invoiceService.findAll();
-        return ResponseEntity.ok(invoices);
+    public ResponseEntity<List<OrderDTO>> getAllOrders() {
+        return ResponseEntity.ok(invoiceService.findAll());
     }
 
-    // Obtener una factura por ID
     @GetMapping("/{id}")
-    public ResponseEntity<Invoice> getOrderById(@PathVariable Long id) {
-        Invoice invoice = invoiceService.findById(id);
-        return ResponseEntity.ok(invoice);
+    public ResponseEntity<OrderDTO> getOrderById(@PathVariable Long id) {
+        return invoiceService.findById(id)
+                .map(ResponseEntity::ok)
+                .orElseThrow(() -> new RuntimeException("Orden no encontrada con id: " + id));
     }
 
-    // Crear una nueva factura
     @PostMapping
-    public ResponseEntity<Invoice> createOrder(@RequestBody OrderDTO orderDTO) {
-        Invoice createdInvoice = invoiceService.saveInvoice(orderDTO);
-        return ResponseEntity.ok(createdInvoice);
+    public ResponseEntity<OrderDTO> createOrder(@Valid @RequestBody OrderDTO invoiceDTO) {
+        return new ResponseEntity<>(invoiceService.create(invoiceDTO), HttpStatus.CREATED);
     }
 
-    // Actualizar una factura existente
     @PutMapping("/{id}")
-    public ResponseEntity<Invoice> updateOrder(@PathVariable Long id, @RequestBody OrderDTO orderDTO) {
-        Invoice updatedInvoice = invoiceService.updateInvoice(id, orderDTO);
-        return ResponseEntity.ok(updatedInvoice);
+    public ResponseEntity<OrderDTO> updateOrder(
+            @PathVariable Long id,
+            @Valid @RequestBody OrderDTO orderDTO) {
+        OrderDTO updatedOrder = invoiceService.update(id, orderDTO);
+        return ResponseEntity.ok(updatedOrder);
     }
 
-    // Eliminar una factura por ID
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteOrder(@PathVariable Long id) {
-        invoiceService.deleteInvoice(id);
+        invoiceService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
 }

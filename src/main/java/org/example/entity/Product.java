@@ -1,6 +1,10 @@
 package org.example.entity;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.example.dto.OrderDTO;
+import org.example.dto.ProductSizeDTO;
+import org.example.mapper.OrderMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -28,7 +32,8 @@ public class Product {
     private List<HistoricalPrice> historicalPrices;
 
     @OneToMany(mappedBy = "product")
-    private List<ProductSizes> productSizes;
+    private List<ProductForSale> productForSales;
+
 
     //Metodo para obtener el precio actual
     public Double precioActual() {
@@ -43,35 +48,38 @@ public class Product {
 
     //Metodo para obtener cantidad vendida
     public Integer getCantidadTotalVendida() {
-        if (productSizes == null || productSizes.isEmpty()) {
+        if (productForSales == null || productForSales.isEmpty()) {
             return 0;
         }
 
-        return productSizes.stream()
+        return productForSales.stream()
                 .flatMap(productSize -> productSize.getInvoiceDetails().stream())
                 .mapToInt(InvoiceDetail::getQuantity)
                 .sum();
     }
 
-    //Obtener lista de talles disponibles
-    public List<Size> getTallesDisponibles() {
-        if (productSizes == null || productSizes.isEmpty()) {
+    public List<ProductSizeDTO> getTallesDisponibles() {
+        if (productForSales == null || productForSales.isEmpty()) {
             return Collections.emptyList();
         }
 
-        return productSizes.stream()
+        return productForSales.stream()
                 .filter(productSize -> productSize.stockActualProductSize() > 0)
-                .map(ProductSizes::getSize)
+                .map(productForSale -> ProductSizeDTO.builder()
+                        .id(productForSale.getSize().getId())
+                        .size(productForSale.getSize().getSizeNumber())
+                        .build())
                 .collect(Collectors.toList());
     }
 
     //obtener lista de facturas asociadas
+
     public List<Invoice> getInvoicesAsociadas() {
-        if (productSizes == null || productSizes.isEmpty()) {
+        if (productForSales == null || productForSales.isEmpty()) {
             return Collections.emptyList();
         }
 
-        return productSizes.stream()
+        return productForSales.stream()
                 .flatMap(productSize -> productSize.getInvoiceDetails().stream())
                 .map(InvoiceDetail::getInvoice)
                 .distinct()
@@ -80,10 +88,10 @@ public class Product {
 
     //obtener lista de factura detalle asociada
     public List<InvoiceDetail> getInvoiceDetailsAsociadas() {
-        if (productSizes == null || productSizes.isEmpty()) {
+        if (productForSales == null || productForSales.isEmpty()) {
             return Collections.emptyList();
         }
-        return productSizes.stream()
+        return productForSales.stream()
                 .flatMap(productSize -> productSize.getInvoiceDetails().stream())
                 .distinct()
                 .collect(Collectors.toList());

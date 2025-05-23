@@ -1,14 +1,14 @@
 package org.example.controller;
 
 import org.example.dto.ProductCategoryDTO;
-import org.example.service.ServiceInterface.ProductCategoryService;
+import org.example.service.ProductCategoryService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/product-categories")
+@RequestMapping("/api/productCategories")
 @CrossOrigin(origins = "http://localhost:5173")
 public class ProductCategoryController {
 
@@ -18,18 +18,13 @@ public class ProductCategoryController {
         this.productCategoryService = productCategoryService;
     }
 
-    // Crear una nueva categoría de producto
-    @PostMapping
-    public ResponseEntity<ProductCategoryDTO> create(@RequestBody ProductCategoryDTO productCategoryDTO) {
-        ProductCategoryDTO createdCategory = productCategoryService.create(productCategoryDTO);
-        return ResponseEntity.ok(createdCategory);
-    }
 
     // Obtener una categoría por ID
     @GetMapping("/{id}")
     public ResponseEntity<ProductCategoryDTO> getById(@PathVariable Long id) {
-        ProductCategoryDTO productCategoryDTO = productCategoryService.findById(id);
-        return ResponseEntity.ok(productCategoryDTO);
+        return productCategoryService.findById(id)
+                .map(ResponseEntity::ok)
+                .orElseThrow(() -> new RuntimeException("Categoría no encontrada con id: " + id));
     }
 
     // Obtener todas las categorías de productos
@@ -39,12 +34,6 @@ public class ProductCategoryController {
         return ResponseEntity.ok(productCategories);
     }
 
-    // Actualizar una categoría de producto
-    @PutMapping("/{id}")
-    public ResponseEntity<ProductCategoryDTO> update(@PathVariable Long id, @RequestBody ProductCategoryDTO productCategoryDTO) {
-        ProductCategoryDTO updatedCategory = productCategoryService.update(id, productCategoryDTO);
-        return ResponseEntity.ok(updatedCategory);
-    }
 
     // Eliminar una categoría de producto
     @DeleteMapping("/{id}")

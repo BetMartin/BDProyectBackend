@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 @Entity
-public class ProductSizes {
+public class ProductForSale {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -21,10 +21,10 @@ public class ProductSizes {
     @JoinColumn(name = "product_id")
     private Product product;
 
-    @OneToMany(mappedBy = "productSize")
+    @OneToMany(mappedBy = "productForSale")
     private List<InvoiceDetail> invoiceDetails;
 
-    @OneToMany(mappedBy = "productSize")
+    @OneToMany(mappedBy = "productForSale")
     private List<ProductStock> productStocks;
 
     //Buscar stock actual

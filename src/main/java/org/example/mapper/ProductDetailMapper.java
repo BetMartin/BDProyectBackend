@@ -14,13 +14,13 @@ import java.util.List;
 public interface ProductDetailMapper {
 
     @Mapping(source = "quantity", target = "quantity")
-    @Mapping(source = "productSize", target = "productStock")
+    @Mapping(source = "productForSale", target = "productStock")
     @Mapping(target = "subtotal", expression = "java(invoiceDetail.getSubtotal())")
     @Mapping(source = "invoice", target = "order")
     ProductDetailDTO toDto(InvoiceDetail invoiceDetail);
 
     @Mapping(target = "quantity", source = "quantity")
-    @Mapping(target = "productSize", source = "productStock")
+    @Mapping(target = "productForSale", source = "productStock")
     @Mapping(target = "invoice", source = "order")
     InvoiceDetail toEntity(ProductDetailDTO dto);
 

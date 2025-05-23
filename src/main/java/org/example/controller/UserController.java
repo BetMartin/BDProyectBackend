@@ -1,7 +1,8 @@
 package org.example.controller;
 
+import lombok.RequiredArgsConstructor;
 import org.example.dto.UserDTO;
-import org.example.service.ServiceInterface.UserService;
+import org.example.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,66 +10,35 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/users")
+@RequestMapping("/api/users")
+@RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
 
     private final UserService userService;
 
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
-
-    //Login usuario
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestParam String userName, @RequestParam String password) {
         try {
-            UserDTO authenticatedUser = userService.authenticateUser(userName, password);
-
-            if (authenticatedUser != null) {
-                return ResponseEntity.ok(authenticatedUser);
-            } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("Credenciales incorrectas. Por favor, verifique su nombre de usuario y contraseña.");
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error durante la autenticación: " + e.getMessage());
+            UserDTO userDTO = userService.login(userName, password);
+            return ResponseEntity.ok(userDTO);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Credenciales inválidas: " + e.getMessage());
         }
     }
 
-    // Obtener todos los usuarios
     @GetMapping
     public ResponseEntity<List<UserDTO>> getAllUsers() {
         List<UserDTO> users = userService.findAll();
         return ResponseEntity.ok(users);
     }
 
-    // Obtener un usuario por ID
     @GetMapping("/{id}")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
-        UserDTO user = userService.findById(id);
-        return ResponseEntity.ok(user);
+        return userService.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    // Crear un nuevo usuario
-    @PostMapping
-    public ResponseEntity<UserDTO> createUser(@RequestBody UserDTO userDTO) {
-        UserDTO createdUser = userService.create(userDTO);
-        return ResponseEntity.ok(createdUser);
-    }
-
-    // Actualizar un usuario existente
-    @PutMapping("/{id}")
-    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
-        UserDTO updatedUser = userService.update(id, userDTO);
-        return ResponseEntity.ok(updatedUser);
-    }
-
-    // Eliminar un usuario por ID
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        userService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
 }

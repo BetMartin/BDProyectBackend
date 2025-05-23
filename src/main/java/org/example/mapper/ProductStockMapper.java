@@ -3,7 +3,8 @@ package org.example.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.example.dto.ProductStockDTO;
-import org.example.entity.ProductSizes;
+import org.example.entity.ProductForSale;
+import org.mapstruct.Mappings;
 
 import java.util.List;
 
@@ -13,18 +14,21 @@ import java.util.List;
 })
 public interface ProductStockMapper {
 
-    @Mapping(target = "stock", expression = "java(productSizes.stockActualProductSize())")
-    @Mapping(source = "product", target = "product")
-    @Mapping(source = "size", target = "size")
-    ProductStockDTO toDto(ProductSizes productSizes);
+    @Mappings({
+            @Mapping(source = "id", target = "id"), // Asignar el id directamente
+            @Mapping(target = "stock", expression = "java(productForSale.stockActualProductSize())"), // Obtener stock desde el método
+            @Mapping(source = "product", target = "product"), // Mapear el producto usando ProductMapper
+            @Mapping(source = "size", target = "size") // Mapear el tamaño usando SizeMapper
+    })
+    ProductStockDTO toDto(ProductForSale productForSale);
 
-    @Mapping(target = "invoiceDetails", ignore = true)
-    @Mapping(target = "productStocks", ignore = true)
-    @Mapping(source = "product", target = "product")
-    @Mapping(source = "size", target = "size")
-    ProductSizes toEntity(ProductStockDTO dto);
+    @Mappings({
+            @Mapping(source = "id", target = "id"), // El id del DTO corresponde al id de ProductForSale
+            @Mapping(target = "size", source = "size"), // Mapear el tamaño desde el DTO
+            @Mapping(target = "product", source = "product") // Mapear el producto desde el DTO
+    })
+    ProductForSale toEntity(ProductStockDTO dto); // Mapear de vuelta desde el DTO a la entidad
+    List<ProductStockDTO> toDtoList(List<ProductForSale> productForSaleList);
+    List<ProductForSale> toEntityList(List<ProductStockDTO> productStockDTOList);
 
-    List<ProductStockDTO> toDtoList(List<ProductSizes> productSizes);
-    
-    List<ProductSizes> toEntityList(List<ProductStockDTO> dtos);
 }

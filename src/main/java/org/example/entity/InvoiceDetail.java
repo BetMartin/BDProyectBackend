@@ -11,31 +11,31 @@ public class InvoiceDetail {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "invoice_id")
+    @JoinColumn(name = "invoice")
     private Invoice invoice;
 
     @ManyToOne
-    @JoinColumn(name = "productSize_id")
-    private ProductSizes productSize;
+    @JoinColumn(name = "productForSale")
+    private ProductForSale productForSale;
 
     private Integer quantity;
 
     //Producto vendido
     public Product getProduct() {
-        return productSize.getProduct();
+        return productForSale.getProduct();
     }
 
     //Cambiar stock de ProductSize
     public ProductStock actualizarStock() {
-        ProductSizes productoTalle = this.getProductSize();
-        Integer stockActual = productoTalle.stockActualProductSize();
+        ProductForSale productForSale = this.getProductForSale();
+        Integer stockActual = productForSale.stockActualProductSize();
 
         if (stockActual < this.quantity) {
             throw new IllegalStateException("Stock insuficiente para realizar la venta");
         }
 
         ProductStock nuevoStock = new ProductStock();
-        nuevoStock.setProductSize(productoTalle);
+        nuevoStock.setProductForSale(productForSale);
         nuevoStock.setDate(this.getInvoice().getDate());
         nuevoStock.setStock(stockActual - this.quantity);
 

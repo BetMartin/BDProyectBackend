@@ -1,4 +1,4 @@
-package org.example.Repository;
+package org.example.repository;
 
 import org.example.entity.Phone;
 import org.springframework.data.jpa.repository.JpaRepository;
