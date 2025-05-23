@@ -10,16 +10,10 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ProductStockRepository extends JpaRepository<ProductStock, Long> {
-    List<ProductStock> findByProductSizeOrderByDateDesc(ProductForSale productSize);
+    List<ProductStock> findByProductForSaleOrderByDateDesc(ProductForSale productForSale);
 
-    Optional<ProductStock> findFirstByProductSizeOrderByDateDesc(ProductForSale productSize);
+    Optional<ProductStock> findFirstByProductForSaleOrderByDateDesc(ProductForSale productForSale);
 
-    List<ProductStock> findByDateBetweenOrderByDateDesc(LocalDate startDate, LocalDate endDate);
-
-    List<ProductStock> findByProductSizeAndDateBetweenOrderByDateDesc(
-            ProductForSale productSize,
-            LocalDate startDate,
-            LocalDate endDate);
 
     @Query("SELECT ps FROM ProductStock ps WHERE ps.date IN " +
             "(SELECT MAX(ps2.date) FROM ProductStock ps2 GROUP BY ps2.productForSale) " +

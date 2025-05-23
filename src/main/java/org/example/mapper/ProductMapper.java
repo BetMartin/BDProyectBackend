@@ -24,7 +24,7 @@ public interface ProductMapper {
             @Mapping(source = "image", target = "image"),
             @Mapping(source = "description", target = "description"),
             @Mapping(target = "price", expression = "java(String.valueOf(product.precioActual()))"), // Conversión Double -> String
-            @Mapping(source = "productCategory", target = "category"),
+            @Mapping(source = "productCategory", target = "category", ignore = true),
             @Mapping(target = "sizes", expression = "java(mapSizes(product))"), // Llama al método mapSizes
             @Mapping(target = "productDetail", expression = "java(mapInvoiceDetails(product))") // Llama al método mapInvoiceDetails
     })
@@ -37,7 +37,7 @@ public interface ProductMapper {
             @Mapping(source = "model", target = "model"),
             @Mapping(source = "image", target = "image"),
             @Mapping(source = "description", target = "description"),
-            @Mapping(source = "category", target = "productCategory"), // Relación inversa con ProductCategoryMapper
+            @Mapping(source = "category", target = "productCategory",ignore = true), // Relación inversa con ProductCategoryMapper
             @Mapping(target = "historicalPrices", ignore = true),
             @Mapping(target = "productForSales", ignore = true), // Campos ignorados
             @Mapping(target = "tallesDisponibles", ignore = true), // Ignorar propiedades de negocio adicionales

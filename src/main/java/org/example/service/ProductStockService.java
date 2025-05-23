@@ -61,12 +61,12 @@ public class ProductStockService {
 
     @Transactional(readOnly = true)
     public List<ProductStock> findByProductSize(ProductForSale productForSale) {
-        return productStockRepository.findByProductSizeOrderByDateDesc(productForSale);
+        return productStockRepository.findByProductForSaleOrderByDateDesc(productForSale);
     }
 
     @Transactional(readOnly = true)
     public Optional<ProductStock> findLatestStockByProductSize(ProductForSale productForSale) {
-        return productStockRepository.findFirstByProductSizeOrderByDateDesc(productForSale);
+        return productStockRepository.findFirstByProductForSaleOrderByDateDesc(productForSale);
     }
 
 

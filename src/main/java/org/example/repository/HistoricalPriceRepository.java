@@ -11,7 +11,7 @@ import java.util.Optional;
 
 public interface HistoricalPriceRepository extends JpaRepository<HistoricalPrice, Long> {
 
-    List<HistoricalPrice> findByProductOrderByFechaDesc(Product product);
-    Optional<HistoricalPrice> findFirstByProductOrderByFechaDesc(Product product);
-    List<HistoricalPrice> findByFechaBetween(LocalDate fechaInicio, LocalDate fechaFin);
+    List<HistoricalPrice> findByProductOrderByDateDesc(Product product);
+    Optional<HistoricalPrice> findFirstByProductOrderByDateDesc(Product product);
+    List<HistoricalPrice> findByDateBetween(LocalDate fechaInicio, LocalDate fechaFin);
 }

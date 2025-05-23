@@ -11,7 +11,8 @@ import java.util.List;
 public interface InvoiceDetailRepository extends JpaRepository<InvoiceDetail, Long> {
     List<InvoiceDetail> findByInvoiceId(Long invoiceId);
 
-    Integer findTotalQuantitySoldByProductId(Long productId);
+    @Query("SELECT SUM(id.quantity) FROM InvoiceDetail id WHERE id.productForSale.product.id = :productId")
+    Integer findTotalQuantitySoldByProductId(@Param("productId") Long productId);
 
     @Query("SELECT id.invoice FROM InvoiceDetail id WHERE id.productForSale.product.id = :productId")
     List<Invoice> findInvoicesByProductId(@Param("productId") Long productId);

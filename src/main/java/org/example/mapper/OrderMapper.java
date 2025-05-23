@@ -14,11 +14,11 @@ public interface OrderMapper {
 
     @Mapping(source = "date", target = "fecha")
     @Mapping(target = "total", expression = "java(invoice.getTotal())")
-    @Mapping(source = "details", target = "detalles")
+    @Mapping(source = "details", target = "detalles", ignore = true)
     OrderDTO toDto(Invoice invoice);
 
     @Mapping(target = "date", source = "fecha")
-    @Mapping(target = "details", source = "detalles")
+    @Mapping(target = "details", source = "detalles", ignore = true)
     @Mapping(target = "person", ignore = true)
     Invoice toEntity(OrderDTO dto);
 

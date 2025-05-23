@@ -62,12 +62,12 @@ public class PrecioHistoricoService {
 
     @Transactional(readOnly = true)
     public List<HistoricalPrice> findByProduct(Product product) {
-        return precioHistoricoRepository.findByProductOrderByFechaDesc(product);
+        return precioHistoricoRepository.findByProductOrderByDateDesc(product);
     }
 
     @Transactional(readOnly = true)
     public Optional<HistoricalPrice> findLastPriceByProduct(Product product) {
-        return precioHistoricoRepository.findFirstByProductOrderByFechaDesc(product);
+        return precioHistoricoRepository.findFirstByProductOrderByDateDesc(product);
     }
 
 }
