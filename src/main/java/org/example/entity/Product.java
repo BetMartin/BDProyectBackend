@@ -24,8 +24,8 @@ public class Product {
     private String image;
     private String description;
 
-    @ManyToOne
-    @JoinColumn(name = "ProductCategory_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_category_id")
     private ProductCategory productCategory;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
@@ -64,7 +64,7 @@ public class Product {
         }
 
         return productForSales.stream()
-                .filter(productSize -> productSize.stockActualProductSize() > 0)
+                .filter(productForSale -> productForSale.stockActualProductSize() > 0)
                 .map(productForSale -> ProductSizeDTO.builder()
                         .id(productForSale.getSize().getId())
                         .size(productForSale.getSize().getSizeNumber())
@@ -80,7 +80,7 @@ public class Product {
         }
 
         return productForSales.stream()
-                .flatMap(productSize -> productSize.getInvoiceDetails().stream())
+                .flatMap(productForSale -> productForSale.getInvoiceDetails().stream())
                 .map(InvoiceDetail::getInvoice)
                 .distinct()
                 .collect(Collectors.toList());

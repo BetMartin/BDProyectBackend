@@ -2,8 +2,10 @@ package org.example.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.dto.ProductDTO;
+import org.example.dto.ProductSizeDTO;
 import org.example.entity.HistoricalPrice;
 import org.example.entity.Product;
+import org.example.entity.ProductCategory;
 import org.example.mapper.ProductCategoryMapper;
 import org.example.mapper.ProductMapper;
 import org.example.repository.ProductRepository;
@@ -13,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,8 +30,20 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public List<ProductDTO> findAll() {
-        return productRepository.findAll().stream()
-                .map(productMapper::toDto)
+        List<Product> products = productRepository.findAll();
+
+        // Convertimos cada producto en ProductDTO y le asignamos la categoría.
+        return products.stream()
+                .map(product -> {
+                    ProductDTO dto = productMapper.toDto(product);
+                    // Asignar la categoría al ProductDTO.
+                    if (product.getProductCategory() != null) {
+                        ProductCategory category = product.getProductCategory();
+                        category.setProducts(null); // Establecemos products a null para evitar la recursión
+                        dto.setCategory(productCategoryMapper.toDto(category));
+                    }
+                    return dto;
+                })
                 .toList();
     }
 
@@ -80,7 +95,7 @@ public class ProductService {
         existingProduct.setBrand(productDTO.getBrand());
         existingProduct.setModel(productDTO.getModel());
         existingProduct.setDescription(productDTO.getDescription());
-        
+
         // Si viene una categoría nueva, actualizarla
         if (productDTO.getCategory() != null) {
             existingProduct.setProductCategory(productCategoryMapper.toEntity(productDTO.getCategory()));
@@ -131,5 +146,85 @@ public class ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado con id: " + productId));
         return precioHistoricoService.findByProduct(product);
+    }
+
+    //Filtrar productos por categoria
+    @Transactional(readOnly = true)
+    public List<ProductDTO> findProductsByCategoryName(String categoryName) {
+        // Obtenemos la lista de productos según el nombre de la categoría.
+        List<Product> products = productRepository.findByProductCategoryName(categoryName);
+
+        // Convertimos cada producto en ProductDTO, le asignamos la categoría y las tallas disponibles.
+        return products.stream()
+                .map(product -> {
+                    ProductDTO dto = productMapper.toDto(product);
+
+                    // Asignar la categoría al ProductDTO.
+                    if (product.getProductCategory() != null) {
+                        ProductCategory category = product.getProductCategory();
+                        category.setProducts(null); // Establecemos products a null para evitar la recursión
+                        dto.setCategory(productCategoryMapper.toDto(category));
+                    }
+
+
+                    // Asignar las tallas disponibles al ProductDTO.
+                    List<ProductSizeDTO> availableSizes = product.getTallesDisponibles();
+                    dto.setSizes(availableSizes);
+
+                    return dto;
+                })
+                .toList();
+    }
+
+    @Transactional
+    public ProductDTO assignCategoryToProduct(Long productId, Long categoryId) {
+        // Buscar el producto desde el repositorio
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + productId));
+
+        // Buscar la categoría desde el repositorio
+        ProductCategory category = productRepository.findCategoryById(categoryId)
+                .orElseThrow(() -> new RuntimeException("Categoría no encontrada con ID: " + categoryId));
+        category.setProducts(null);
+
+        // Asignar la categoría al producto
+        product.setProductCategory(category);
+
+        // Mapear el producto a DTO y retornarlo
+        return productMapper.toDto(product);
+    }
+
+    @Transactional
+    public ProductDTO assignAvailableSizesToProduct(Long productId) {
+        // Buscar el producto desde el repositorio
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + productId));
+
+        // Obtener las tallas disponibles
+        List<ProductSizeDTO> availableSizes = product.getProductForSales().stream()
+                .filter(productForSale -> productForSale.stockActualProductSize() > 0)
+                .map(productForSale -> ProductSizeDTO.builder()
+                        .id(productForSale.getSize().getId())
+                        .size(productForSale.getSize().getSizeNumber())
+                        .build())
+                .collect(Collectors.toList());
+
+        if (availableSizes.isEmpty()) {
+            throw new RuntimeException("No hay tallas disponibles para el producto con ID: " + productId);
+        }
+
+        // Crear el DTO y asignar las tallas
+        ProductDTO productDTO = productMapper.toDto(product);
+
+        // Asegurarnos que la categoría no tenga productos anidados
+        if (product.getProductCategory() != null) {
+            ProductCategory category = product.getProductCategory();
+            category.setProducts(null);
+            productDTO.setCategory(productCategoryMapper.toDto(category));
+        }
+
+        productDTO.setSizes(availableSizes);
+
+        return productDTO;
     }
 }
