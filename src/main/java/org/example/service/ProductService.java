@@ -1,6 +1,7 @@
 package org.example.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.dto.ProductCategoryDTO;
 import org.example.dto.ProductDTO;
 import org.example.dto.ProductSizeDTO;
 import org.example.entity.HistoricalPrice;
@@ -13,6 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -27,6 +31,7 @@ public class ProductService {
     private final ImageService imageService;
     private final PrecioHistoricoService precioHistoricoService;
     private final ProductCategoryMapper productCategoryMapper;
+    private final ProductCategoryService productCategoryService;
 
     @Transactional(readOnly = true)
     public List<ProductDTO> findAll() {
@@ -36,6 +41,9 @@ public class ProductService {
         return products.stream()
                 .map(product -> {
                     ProductDTO dto = productMapper.toDto(product);
+                    Double lastPrice = product.precioActual();
+                    dto.setPrice(lastPrice != null ? lastPrice.toString() : "0.0");
+
                     // Asignar la categoría al ProductDTO.
                     if (product.getProductCategory() != null) {
                         ProductCategory category = product.getProductCategory();
@@ -48,11 +56,26 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<ProductDTO> findById(Long id) {
-        return productRepository.findById(id)
-                .map(productMapper::toDto);
+    public ProductDTO findById(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado con id: " + id));
+
+        ProductDTO dto = productMapper.toDto(product);
+
+        // Asignar la categoría al ProductDTO
+        if (product.getProductCategory() != null) {
+            ProductCategory category = product.getProductCategory();
+            category.setProducts(null); // Establecemos products a null para evitar la recursión
+            dto.setCategory(productCategoryMapper.toDto(category));
+        }
+        Double lastPrice = product.precioActual();
+        dto.setPrice(lastPrice != null ? lastPrice.toString() : "0.0");
+
+
+        return dto;
     }
 
+    @Transactional
     public ProductDTO create(ProductDTO productDTO, MultipartFile imagen) {
         // Guardar la imagen y obtener su nombre
         String imageName = null;
@@ -60,9 +83,13 @@ public class ProductService {
             imageName = imageService.saveImage(imagen);
         }
 
+        // Obtenemos el ID de la categoría del DTO
+        ProductCategoryDTO categoryDTO = productCategoryService.findById(productDTO.getCategory().getId());
+
         // Crear y guardar el producto
         Product product = productMapper.toEntity(productDTO);
         product.setImage(imageName);
+        product.setProductCategory(productCategoryMapper.toEntity(categoryDTO));
         Product savedProduct = productRepository.save(product);
 
         // Crear el precio histórico inicial
@@ -98,8 +125,13 @@ public class ProductService {
 
         // Si viene una categoría nueva, actualizarla
         if (productDTO.getCategory() != null) {
-            existingProduct.setProductCategory(productCategoryMapper.toEntity(productDTO.getCategory()));
+            ProductCategoryDTO categoryDTO = productCategoryService.findById(productDTO.getCategory().getId());
+            existingProduct.setProductCategory(productCategoryMapper.toEntity(categoryDTO));
         }
+
+        //Si viene precio nuevo actualizar precio
+        validateAndUpdatePrice(id, Double.parseDouble(productDTO.getPrice()));
+
 
         Product updatedProduct = productRepository.save(existingProduct);
         return productMapper.toDto(updatedProduct);
@@ -226,5 +258,29 @@ public class ProductService {
         productDTO.setSizes(availableSizes);
 
         return productDTO;
+    }
+
+    @Transactional
+    protected void validateAndUpdatePrice(Long productId, Double newPrice) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+
+        Double currentPrice = product.precioActual();
+
+        // Si el precio es diferente o no hay precio actual, crear nuevo registro histórico
+        if (currentPrice == null || !newPrice.equals(currentPrice)) {
+            HistoricalPrice historicalPrice = new HistoricalPrice();
+            historicalPrice.setProduct(product);
+            historicalPrice.setPrice(newPrice);
+            historicalPrice.setDate(LocalDate.now());
+            precioHistoricoService.save(historicalPrice);
+
+            // Actualizar la lista de historicalPrices del producto
+            if (product.getHistoricalPrices() == null) {
+                product.setHistoricalPrices(new ArrayList<>());
+            }
+            product.getHistoricalPrices().add(historicalPrice);
+            productRepository.save(product);
+        }
     }
 }

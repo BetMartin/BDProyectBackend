@@ -31,21 +31,21 @@ public class SizeController {
                 .orElseThrow(() -> new RuntimeException("Talla no encontrada con id: " + id));
     }
 
-    @PostMapping
-    public ResponseEntity<ProductSizeDTO> createSize(@Valid @RequestBody ProductSizeDTO sizeDTO) {
-        return new ResponseEntity<>(sizeService.save(sizeDTO), HttpStatus.CREATED);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<ProductSizeDTO> updateSize(
-            @PathVariable Long id, 
-            @Valid @RequestBody ProductSizeDTO sizeDTO) {
-        return ResponseEntity.ok(sizeService.update(id, sizeDTO));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSize(@PathVariable Long id) {
-        sizeService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
+//    @PostMapping
+//    public ResponseEntity<ProductSizeDTO> createSize(@Valid @RequestBody ProductSizeDTO sizeDTO) {
+//        return new ResponseEntity<>(sizeService.save(sizeDTO), HttpStatus.CREATED);
+//    }
+//
+//    @PutMapping("/{id}")
+//    public ResponseEntity<ProductSizeDTO> updateSize(
+//            @PathVariable Long id,
+//            @Valid @RequestBody ProductSizeDTO sizeDTO) {
+//        return ResponseEntity.ok(sizeService.update(id, sizeDTO));
+//    }
+//
+//    @DeleteMapping("/{id}")
+//    public ResponseEntity<Void> deleteSize(@PathVariable Long id) {
+//        sizeService.delete(id);
+//        return ResponseEntity.noContent().build();
+//    }
 }

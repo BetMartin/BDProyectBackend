@@ -14,21 +14,17 @@ import java.util.UUID;
 @Service
 public class ImageService {
 
-    @Value("${app.image.upload-dir}")
-    private String uploadDir;
-
-    private Path rootLocation;
+    private Path uploadDir =Paths.get("uploads/img");
 
     /**
      * Inicializa el directorio de imágenes si no existe
      */
     @PostConstruct
     public void setUp() {
-        rootLocation = Paths.get(uploadDir);
         try {
-            if (!Files.exists(rootLocation)) {
-                Files.createDirectories(rootLocation);
-                log.info("Directorio de imágenes creado en: {}", rootLocation.toAbsolutePath());
+            if (!Files.exists(uploadDir)) {
+                Files.createDirectories(uploadDir);
+                log.info("Directorio de imágenes creado en: {}", uploadDir.toAbsolutePath());
             }
         } catch (IOException e) {
             log.error("No se pudo crear el directorio para las imágenes", e);
@@ -48,12 +44,12 @@ public class ImageService {
             String filename = generateUniqueFilename(file.getOriginalFilename());
             
             // Copiar el archivo al directorio de imágenes
-            Path destinationFile = rootLocation.resolve(filename)
+            Path destinationFile = uploadDir.resolve(filename)
                     .normalize()
                     .toAbsolutePath();
             
             // Verificar que el destino está dentro del directorio permitido
-            if (!destinationFile.getParent().equals(rootLocation.toAbsolutePath())) {
+            if (!destinationFile.getParent().equals(uploadDir.toAbsolutePath())) {
                 throw new SecurityException("No se puede almacenar el archivo fuera del directorio designado");
             }
 
@@ -74,7 +70,7 @@ public class ImageService {
      */
     public void deleteImage(String filename) {
         try {
-            Path file = rootLocation.resolve(filename);
+            Path file = uploadDir.resolve(filename);
             Files.deleteIfExists(file);
             log.info("Imagen eliminada exitosamente: {}", filename);
         } catch (IOException e) {
@@ -87,14 +83,14 @@ public class ImageService {
      * Obtiene la ruta completa de una imagen
      */
     public Path getImagePath(String filename) {
-        return rootLocation.resolve(filename).normalize();
+        return uploadDir.resolve(filename).normalize();
     }
 
     /**
      * Verifica si una imagen existe
      */
     public boolean imageExists(String filename) {
-        Path file = rootLocation.resolve(filename);
+        Path file = uploadDir.resolve(filename);
         return Files.exists(file);
     }
 
@@ -135,10 +131,4 @@ public class ImageService {
                contentType.equals("image/gif");
     }
 
-    /**
-     * Obtiene la URL base para las imágenes
-     */
-    public String getImageBaseUrl() {
-        return "/images/"; // Esta URL debe coincidir con la configuración de tu WebMvcConfigurer
-    }
 }

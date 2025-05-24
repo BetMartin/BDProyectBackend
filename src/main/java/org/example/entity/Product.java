@@ -41,7 +41,8 @@ public class Product {
             return null;
         }
         return historicalPrices.stream()
-                .max(Comparator.comparing(HistoricalPrice::getDate))
+                .max(Comparator.comparing(HistoricalPrice::getDate)
+                        .thenComparing(HistoricalPrice::getId)) // Añadimos el ID como segundo criterio
                 .map(HistoricalPrice::getPrice)
                 .orElse(null);
     }

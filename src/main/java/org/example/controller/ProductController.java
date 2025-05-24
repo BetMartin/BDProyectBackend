@@ -1,6 +1,7 @@
 package org.example.controller;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.dto.ProductDTO;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -29,27 +31,79 @@ public class ProductController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
-        return productService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado con id: " + id));
+        ProductDTO product = productService.findById(id);
+        return ResponseEntity.ok(product);
     }
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<ProductDTO> createProduct(
-            @Valid @RequestPart("product") ProductDTO productDTO,
-            @RequestPart("file") MultipartFile file) {
-        ProductDTO createdProduct = productService.create(productDTO, file);
-        return new ResponseEntity<>(createdProduct, HttpStatus.CREATED);
+            @RequestPart(value = "product", required = false) String productJson,
+            @RequestPart(value = "file", required = true) MultipartFile file) {
+        try {
+            if (productJson == null || productJson.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            // Convertir el JSON del producto a objeto ProductDTO
+            ObjectMapper objectMapper = new ObjectMapper();
+            ProductDTO productDTO = objectMapper.readValue(productJson, ProductDTO.class);
+
+            // Validar el productDTO
+            if (productDTO == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            // Crear el nuevo producto
+            ProductDTO createdProduct = productService.create(productDTO, file);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
+        } catch (IOException e) {
+            // Agregamos log del error
+            e.printStackTrace(); // o usar un logger apropiado
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);
+        } catch (Exception e) {
+            // Agregamos captura de otras excepciones
+            e.printStackTrace(); // o usar un logger apropiado
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);
+        }
     }
 
-    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
     public ResponseEntity<ProductDTO> updateProduct(
             @PathVariable Long id,
-            @Valid @RequestPart("product") ProductDTO productDTO,
-            @RequestPart("file") MultipartFile file) {
-        ProductDTO updatedProduct = productService.update(id, productDTO, file);
-        return ResponseEntity.ok(updatedProduct);
+            @RequestPart(value = "product", required = true) String productJson,
+            @RequestPart(value = "file", required = true) MultipartFile file) {
+        try {
+            if (productJson == null || productJson.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            // Convertir el JSON del producto a objeto ProductDTO
+            ObjectMapper objectMapper = new ObjectMapper();
+            ProductDTO productDTO = objectMapper.readValue(productJson, ProductDTO.class);
+
+            // Validar el productDTO
+            if (productDTO == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
+            // Actualizar el producto
+            ProductDTO updatedProduct = productService.update(id, productDTO, file);
+            return ResponseEntity.ok(updatedProduct);
+        } catch (IOException e) {
+            e.printStackTrace(); // o usar un logger apropiado
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }catch (Exception e) {
+            e.printStackTrace(); // o usar un logger apropiado
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {

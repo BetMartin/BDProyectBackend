@@ -22,12 +22,11 @@ public class ProductCategoryController {
     // Obtener una categoría por ID
     @GetMapping("/{id}")
     public ResponseEntity<ProductCategoryDTO> getById(@PathVariable Long id) {
-        return productCategoryService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElseThrow(() -> new RuntimeException("Categoría no encontrada con id: " + id));
+        ProductCategoryDTO categoryDTO = productCategoryService.findById(id);
+        return ResponseEntity.ok(categoryDTO);
     }
 
-    // Obtener todas las categorías de productos
+    // Obtener todas las categorías
     @GetMapping
     public ResponseEntity<List<ProductCategoryDTO>> getAll() {
         List<ProductCategoryDTO> productCategories = productCategoryService.findAll();
@@ -36,9 +35,9 @@ public class ProductCategoryController {
 
 
     // Eliminar una categoría de producto
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        productCategoryService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
+//    @DeleteMapping("/{id}")
+//    public ResponseEntity<Void> delete(@PathVariable Long id) {
+//        productCategoryService.delete(id);
+//        return ResponseEntity.noContent().build();
+//    }
 }

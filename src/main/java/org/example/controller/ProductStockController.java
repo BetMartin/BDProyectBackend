@@ -37,17 +37,17 @@ public class ProductStockController {
         return new ResponseEntity<>(createdStock, HttpStatus.CREATED);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ProductStockDTO> updateProductStock(
-            @PathVariable Long id,
-            @Valid @RequestBody ProductStockDTO productStockDTO) {
-        ProductStockDTO updatedStock = productForSaleService.update(id, productStockDTO);
-        return ResponseEntity.ok(updatedStock);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProductStock(@PathVariable Long id) {
-        productForSaleService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
+//    @PutMapping("/{id}")
+//    public ResponseEntity<ProductStockDTO> updateProductStock(
+//            @PathVariable Long id,
+//            @Valid @RequestBody ProductStockDTO productStockDTO) {
+//        ProductStockDTO updatedStock = productForSaleService.update(id, productStockDTO);
+//        return ResponseEntity.ok(updatedStock);
+//    }
+//
+//    @DeleteMapping("/{id}")
+//    public ResponseEntity<Void> deleteProductStock(@PathVariable Long id) {
+//        productForSaleService.delete(id);
+//        return ResponseEntity.noContent().build();
+//    }
 }

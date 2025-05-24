@@ -25,9 +25,10 @@ public class ProductCategoryService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<ProductCategoryDTO> findById(Long id) {
+    public ProductCategoryDTO findById(Long id) {
         return categoryRepository.findById(id)
-                .map(categoryMapper::toDto);
+                .map(categoryMapper::toDto)
+                .orElseThrow(() -> new RuntimeException("Categoría no encontrada con ID: " + id));
     }
 
     public ProductCategoryDTO save(ProductCategoryDTO categoryDTO) {
