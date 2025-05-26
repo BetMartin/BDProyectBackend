@@ -11,10 +11,10 @@ public class ProductDTO {
     private String brand;
     private String model;
     private String image;
-    private Double price;
-    private Integer quantitySold;
+    private String price;
     private String description;
-    private List<SizeDTO> size;
-    private List<ProductDetailDTO> orderDetail;
+    private ProductCategoryDTO category;
+    private List<ProductSizeDTO> sizes;
+    private List<ProductDetailDTO> ProductDetail;
 
 }
