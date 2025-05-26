@@ -4,14 +4,17 @@ import lombok.RequiredArgsConstructor;
 import org.example.dto.ProductDetailDTO;
 import org.example.entity.Invoice;
 import org.example.entity.InvoiceDetail;
+import org.example.entity.ProductForSale;
 import org.example.entity.ProductStock;
 import org.example.mapper.ProductDetailMapper;
 import org.example.repository.InvoiceDetailRepository;
+import org.example.repository.ProductForSaleRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +24,7 @@ public class InvoiceDetailService {
     private final InvoiceDetailRepository invoiceDetailRepository;
     private final ProductDetailMapper productDetailMapper;
     private final ProductStockService productStockService;
+    private final ProductForSaleRepository productForSaleRepository;
 
     @Transactional(readOnly = true)
     public List<ProductDetailDTO> findAll() {
@@ -33,10 +37,21 @@ public class InvoiceDetailService {
                 .map(productDetailMapper::toDto);
     }
 
+    @Transactional(readOnly = true)
+    public List<ProductDetailDTO> findByOrderId(Long orderId) {
+        return invoiceDetailRepository.findByInvoiceId(orderId)
+                .stream()
+                .map(productDetailMapper::toDto)
+                .collect(Collectors.toList());
+    }
     public ProductDetailDTO create(ProductDetailDTO dto) {
         InvoiceDetail invoiceDetail = productDetailMapper.toEntity(dto);
-        
+
         // Validar y actualizar stock
+        // Buscar si existe la combinación producto-talle
+        Optional<ProductForSale> existingProductForSale = productForSaleRepository
+                .findByProductIdAndSizeId(dto.getProductStock().getProduct().getId(), dto.getProductStock().getSize().getId());
+
         ProductStock nuevoStock = invoiceDetail.actualizarStock();
         productStockService.save(nuevoStock);
         

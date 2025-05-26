@@ -2,12 +2,10 @@ package org.example.controller;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.dto.ProductDTO;
 import org.example.service.ProductService;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,6 +31,12 @@ public class ProductController {
     public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
         ProductDTO product = productService.findById(id);
         return ResponseEntity.ok(product);
+    }
+
+    @GetMapping("/category/{name}")
+    public ResponseEntity<List<ProductDTO>> getProductsByCategoryName(@PathVariable String name) {
+        List<ProductDTO> products = productService.findProductsByCategoryName(name);
+        return ResponseEntity.ok(products);
     }
 
     @PostMapping(consumes = {"multipart/form-data"})
@@ -109,11 +113,6 @@ public class ProductController {
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.delete(id);
         return ResponseEntity.noContent().build();
-    }
-    @GetMapping("/category/{name}")
-    public ResponseEntity<List<ProductDTO>> getProductsByCategoryName(@PathVariable String name) {
-        List<ProductDTO> products = productService.findProductsByCategoryName(name);
-        return ResponseEntity.ok(products);
     }
 
 }

@@ -1,9 +1,11 @@
 package org.example.controller;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.dto.ProductStockDTO;
 import org.example.service.ProductForSaleService;
+import org.example.service.ProductStockService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,12 +13,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/product-stock")
+@RequestMapping("/api/productStock")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:5173")
 public class ProductStockController {
 
     private final ProductForSaleService productForSaleService;
+    private final ProductStockService productStockService;
 
     @GetMapping
     public ResponseEntity<List<ProductStockDTO>> getAllProductStocks() {
@@ -31,11 +34,28 @@ public class ProductStockController {
                 .orElseThrow(() -> new RuntimeException("Stock no encontrado con id: " + id));
     }
 
+    @GetMapping("/{productId}/{sizeId}")
+    public ResponseEntity<Integer> getCurrentStock(
+            @PathVariable Long productId,
+            @PathVariable Long sizeId) {
+        try {
+            Integer currentStock = productStockService.getCurrentStockByProductAndSize(productId, sizeId);
+            return ResponseEntity.ok(currentStock);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @PostMapping
     public ResponseEntity<ProductStockDTO> createProductStock(@Valid @RequestBody ProductStockDTO productStockDTO) {
         ProductStockDTO createdStock = productForSaleService.create(productStockDTO);
         return new ResponseEntity<>(createdStock, HttpStatus.CREATED);
     }
+
+
+}
+
+
 
 //    @PutMapping("/{id}")
 //    public ResponseEntity<ProductStockDTO> updateProductStock(
@@ -50,4 +70,5 @@ public class ProductStockController {
 //        productForSaleService.delete(id);
 //        return ResponseEntity.noContent().build();
 //    }
-}
+
+

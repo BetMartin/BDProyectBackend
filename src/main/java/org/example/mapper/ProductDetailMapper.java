@@ -16,12 +16,12 @@ public interface ProductDetailMapper {
     @Mapping(source = "quantity", target = "quantity")
     @Mapping(source = "productForSale", target = "productStock")
     @Mapping(target = "subtotal", expression = "java(invoiceDetail.getSubtotal())")
-    @Mapping(source = "invoice", target = "order")
+    @Mapping(target = "order",ignore = true)
     ProductDetailDTO toDto(InvoiceDetail invoiceDetail);
 
     @Mapping(target = "quantity", source = "quantity")
     @Mapping(target = "productForSale", source = "productStock")
-    @Mapping(target = "invoice", source = "order")
+    @Mapping(target = "invoice", ignore = true)
     InvoiceDetail toEntity(ProductDetailDTO dto);
 
     List<ProductDetailDTO> toDtoList(List<InvoiceDetail> invoiceDetails);

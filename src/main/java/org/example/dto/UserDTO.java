@@ -10,7 +10,7 @@ public class UserDTO {
     private int dni;
     private String firstName;
     private String lastName;
-    private int phone;
+    private String phone;
     private String address;
     private RolDTO rol;
 }

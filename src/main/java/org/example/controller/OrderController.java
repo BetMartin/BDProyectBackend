@@ -22,33 +22,46 @@ public class OrderController {
 
     @GetMapping
     public ResponseEntity<List<OrderDTO>> getAllOrders() {
-        return ResponseEntity.ok(invoiceService.findAll());
+        List<OrderDTO> orders = invoiceService.findAll();
+        return ResponseEntity.ok(orders);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<OrderDTO> getOrderById(@PathVariable Long id) {
-        return invoiceService.findById(id)
-                .map(ResponseEntity::ok)
+        OrderDTO order = invoiceService.findById(id)
                 .orElseThrow(() -> new RuntimeException("Orden no encontrada con id: " + id));
+        return ResponseEntity.ok(order);
     }
 
     @PostMapping
-    public ResponseEntity<OrderDTO> createOrder(@Valid @RequestBody OrderDTO invoiceDTO) {
-        return new ResponseEntity<>(invoiceService.create(invoiceDTO), HttpStatus.CREATED);
+    public ResponseEntity<OrderDTO> createOrder(@Valid @RequestBody OrderDTO orderDTO) {
+        return new ResponseEntity<>(invoiceService.createInvoiceWithDetails(orderDTO), HttpStatus.CREATED);
     }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<OrderDTO> updateOrder(
-            @PathVariable Long id,
-            @Valid @RequestBody OrderDTO orderDTO) {
-        OrderDTO updatedOrder = invoiceService.update(id, orderDTO);
-        return ResponseEntity.ok(updatedOrder);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteOrder(@PathVariable Long id) {
-        invoiceService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
-
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+//    @PutMapping("/{id}")
+//    public ResponseEntity<OrderDTO> updateOrder(
+//            @PathVariable Long id,
+//            @Valid @RequestBody OrderDTO orderDTO) {
+//        OrderDTO updatedOrder = invoiceService.update(id, orderDTO);
+//        return ResponseEntity.ok(updatedOrder);
+//    }
+
+//    @DeleteMapping("/{id}")
+//    public ResponseEntity<Void> deleteOrder(@PathVariable Long id) {
+//        invoiceService.delete(id);
+//        return ResponseEntity.noContent().build();
+//    }
+

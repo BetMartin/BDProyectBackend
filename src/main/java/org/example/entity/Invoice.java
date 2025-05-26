@@ -1,4 +1,5 @@
 package org.example.entity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -15,9 +16,10 @@ public class Invoice {
 
     @ManyToOne
     @JoinColumn(name = "persona_id")
+    @JsonIgnore
     private Person person;
 
-    @OneToMany(mappedBy = "invoice")
+    @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<InvoiceDetail> details;
 
     //Obtener total de factura

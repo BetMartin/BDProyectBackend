@@ -30,11 +30,22 @@ public class ProductForSale {
     //Buscar stock actual
     public Integer stockActualProductSize() {
         if (productStocks == null || productStocks.isEmpty()) {
+            System.out.println("==> No hay registros de stock. Devolviendo 0.");
             return 0;
         }
+
+        System.out.println("==> Verificando lista de stocks...");
+        productStocks.forEach(stock -> System.out.println("Fecha: " + stock.getDate() + ", Stock: " + stock.getStock()));
+
         return productStocks.stream()
                 .max(Comparator.comparing(ProductStock::getDate))
-                .map(ProductStock::getStock)
-                .orElse(0);
+                .map(stock -> {
+                    System.out.println("==> Último stock encontrado: Fecha: " + stock.getDate() + ", Stock: " + stock.getStock());
+                    return stock.getStock();
+                })
+                .orElseGet(() -> {
+                    System.out.println("** Error: No se encontraron registros válidos. Devolviendo 0. **");
+                    return 0;
+                });
     }
 }

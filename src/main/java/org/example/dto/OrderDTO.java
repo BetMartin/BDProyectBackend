@@ -9,4 +9,5 @@ public class OrderDTO {
     private String fecha;
     private double total;
     private List<ProductDetailDTO> detalles;
+    private UserDTO user;
 }

@@ -1,8 +1,10 @@
 package org.example.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.example.entity.ProductForSale;
 import org.example.entity.ProductStock;
+import org.example.repository.ProductForSaleRepository;
 import org.example.repository.ProductStockRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,7 @@ import java.util.Optional;
 public class ProductStockService {
     
     private final ProductStockRepository productStockRepository;
+    private final ProductForSaleRepository productForSaleRepository;
 
     @Transactional(readOnly = true)
     public List<ProductStock> findAll() {
@@ -88,5 +91,20 @@ public class ProductStockService {
     @Transactional(readOnly = true)
     public List<ProductStock> findLowStockProducts(int threshold) {
         return productStockRepository.findByStockLessThanAndDateInLatestForEachProductSize(threshold);
+    }
+
+    public Integer getLastStockByProductForSaleId(Long productForSaleId) {
+        return productStockRepository.findTopByProductForSaleIdOrderByIdDesc(productForSaleId)
+                .map(ProductStock::getStock)
+                .orElse(0);
+    }
+
+    public Integer getCurrentStockByProductAndSize(Long productId, Long sizeId) {
+        return productForSaleRepository
+                .findByProductIdAndSizeId(productId, sizeId)
+                .flatMap(productForSale -> productStockRepository
+                        .findTopByProductForSaleIdOrderByIdDesc(productForSale.getId()))
+                .map(ProductStock::getStock)
+                .orElse(0);
     }
 }

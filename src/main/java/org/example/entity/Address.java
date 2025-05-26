@@ -2,6 +2,7 @@ package org.example.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
 @Entity
@@ -16,6 +17,7 @@ public class Address {
 
     @ManyToOne
     @JoinColumn(name = "province_id")
+    @EqualsAndHashCode.Exclude
     private Province province;
 
     //Metodo para obtener direccion como string

@@ -33,6 +33,10 @@ public class ProductCategoryController {
         return ResponseEntity.ok(productCategories);
     }
 
+}
+
+
+
 
     // Eliminar una categoría de producto
 //    @DeleteMapping("/{id}")
@@ -40,4 +44,3 @@ public class ProductCategoryController {
 //        productCategoryService.delete(id);
 //        return ResponseEntity.noContent().build();
 //    }
-}

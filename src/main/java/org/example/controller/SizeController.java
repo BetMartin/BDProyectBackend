@@ -31,6 +31,9 @@ public class SizeController {
                 .orElseThrow(() -> new RuntimeException("Talla no encontrada con id: " + id));
     }
 
+
+
+}
 //    @PostMapping
 //    public ResponseEntity<ProductSizeDTO> createSize(@Valid @RequestBody ProductSizeDTO sizeDTO) {
 //        return new ResponseEntity<>(sizeService.save(sizeDTO), HttpStatus.CREATED);
@@ -48,4 +51,3 @@ public class SizeController {
 //        sizeService.delete(id);
 //        return ResponseEntity.noContent().build();
 //    }
-}

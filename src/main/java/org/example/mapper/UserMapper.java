@@ -5,51 +5,36 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.example.dto.UserDTO;
 import org.example.entity.User;
-import org.mapstruct.Mappings;
+import org.mapstruct.factory.Mappers;
 
 
 import java.util.List;
 
 @Mapper(componentModel = "spring", uses = {RolMapper.class})
 public interface UserMapper {
+    UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
 
-    @Mappings({
-            @Mapping(source = "user.user_id", target = "id"),                    // Mapeo de id
-            @Mapping(source = "user.username", target = "userName"),            // Mapeo de username
-            @Mapping(source = "user.password", target = "password"),            // Mapeo de password
-            @Mapping(source = "user.person.dni", target = "dni"),               // DNI desde Person
-            @Mapping(source = "user.person.firstName", target = "firstName"),   // Nombre desde Person
-            @Mapping(source = "user.person.lastName", target = "lastName"),     // Apellido desde Person
-            @Mapping(source = "user.person.rol", target = "rol"),               // Rol usando RolMapper
-            @Mapping(target = "phone", expression = "java(getPhoneNumber(user))"),  // Teléfono personalizado
-            @Mapping(target = "address", expression = "java(getAddressStr(user))") // Dirección personalizada
-    })
-    UserDTO toDto(User user);
+    @Mapping(target = "id", source = "user_id")
+    @Mapping(target = "userName", source = "username")
+    @Mapping(target = "firstName", source = "person.firstName")
+    @Mapping(target = "lastName", source = "person.lastName")
+    @Mapping(target = "dni", source = "person.dni")
+    @Mapping(target = "phone", source = "person.phone.number")
+    @Mapping(target = "address", source = "person.address.street")
+    @Mapping(target = "rol", source = "person.rol")
+    UserDTO userToUserDTO(User user);
 
-    @InheritInverseConfiguration
-    @Mappings({
-            @Mapping(target = "person", ignore = true)})
-    User toEntity(UserDTO dto);
+    @Mapping(target = "user_id", source = "id")
+    @Mapping(target = "username", source = "userName")
+    @Mapping(target = "person.firstName", source = "firstName")
+    @Mapping(target = "person.lastName", source = "lastName")
+    @Mapping(target = "person.dni", source = "dni")
+    @Mapping(target = "person.phone.number", source = "phone")
+    @Mapping(target = "person.address.street", source = "address")
+    @Mapping(target = "person.rol", source = "rol")
+    User userDTOToUser(UserDTO userDTO);
 
-    List<UserDTO> toDtoList(List<User> users);
-    
-    List<User> toEntityList(List<UserDTO> dtos);
-
-    // Metodo personalizado para obtener el número de teléfono
-    default int getPhoneNumber(User user) {
-        if (user.getPerson() != null && user.getPerson().getPhone() != null) {
-            return Integer.parseInt(user.getPerson().getPhone().getNumber());
-        }
-        return 0; // Valor predeterminado en caso de que no haya teléfono
-    }
-
-    // Metodo personalizado para obtener la dirección
-    default String getAddressStr(User user) {
-        if (user.getPerson() != null && user.getPerson().getAddress() != null) {
-            return user.getPerson().getAddress().getAddressStr();
-        }
-        return ""; // Valor predeterminado en caso de que no haya dirección
-    }
-
+    List<UserDTO> toUserDTOList(List<User> users);
+    List<User> toUserList(List<UserDTO> userDTOs);
 
 }

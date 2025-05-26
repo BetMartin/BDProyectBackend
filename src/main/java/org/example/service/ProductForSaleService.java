@@ -32,24 +32,41 @@ public class ProductForSaleService {
     }
 
     public ProductStockDTO create(ProductStockDTO dto) {
-        // Validar que no exista la combinación producto-talle
-        if (productForSaleRepository.existsByProductIdAndSizeId(
-                dto.getProduct().getId(), 
-                dto.getSize().getId())) {
-            throw new IllegalArgumentException("Ya existe esta combinación de producto y talle");
+        // Buscar si existe la combinación producto-talle
+        Optional<ProductForSale> existingProductForSale = productForSaleRepository
+                .findByProductIdAndSizeId(dto.getProduct().getId(), dto.getSize().getId());
+
+        if (existingProductForSale.isPresent()) {
+            // Si existe, registrar movimiento de stock
+            ProductForSale productForSale = existingProductForSale.get();
+
+            // Obtener el stock actual
+            Integer currentStock = productStockService.getLastStockByProductForSaleId(productForSale.getId());
+
+            // Calcular el nuevo stock (sumando el valor actual con el nuevo)
+            int newStockValue = (currentStock != null ? currentStock : 0) + dto.getStock();
+
+            // Registrar el nuevo movimiento con el stock actualizado
+            if (newStockValue >= 0) {
+                productStockService.registerStockMovement(productForSale, newStockValue);
+            }
+
+            return productStockMapper.toDto(productForSale);
+
+        } else {
+            // Si no existe, crear nuevo ProductForSale y registrar stock inicial
+            ProductForSale productForSale = productStockMapper.toEntity(dto);
+            ProductForSale savedProductForSale = productForSaleRepository.save(productForSale);
+
+            // Registrar stock inicial
+            if (dto.getStock() >= 0) {
+                productStockService.registerStockMovement(savedProductForSale, dto.getStock());
+            }
+
+            return productStockMapper.toDto(savedProductForSale);
         }
-
-        // Crear ProductSizes
-        ProductForSale productForSale = productStockMapper.toEntity(dto);
-        ProductForSale savedproductForSale = productForSaleRepository.save(productForSale);
-
-        // Registrar stock inicial
-        if (dto.getStock() >= 0) {
-            productStockService.registerStockMovement(savedproductForSale, dto.getStock());
-        }
-
-        return productStockMapper.toDto(savedproductForSale);
     }
+
 
     public ProductStockDTO update(Long id, ProductStockDTO dto) {
         ProductForSale existingProductForSale = productForSaleRepository.findById(id)

@@ -13,7 +13,7 @@ public interface ProductStockRepository extends JpaRepository<ProductStock, Long
     List<ProductStock> findByProductForSaleOrderByDateDesc(ProductForSale productForSale);
 
     Optional<ProductStock> findFirstByProductForSaleOrderByDateDesc(ProductForSale productForSale);
-
+    Optional<ProductStock> findTopByProductForSaleIdOrderByIdDesc(Long productForSaleId);
 
     @Query("SELECT ps FROM ProductStock ps WHERE ps.date IN " +
             "(SELECT MAX(ps2.date) FROM ProductStock ps2 GROUP BY ps2.productForSale) " +

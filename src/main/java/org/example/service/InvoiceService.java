@@ -3,10 +3,11 @@ package org.example.service;
 import lombok.RequiredArgsConstructor;
 import org.example.dto.OrderDTO;
 import org.example.dto.ProductDetailDTO;
-import org.example.entity.Invoice;
-import org.example.entity.InvoiceDetail;
+import org.example.entity.*;
 import org.example.mapper.OrderMapper;
 import org.example.repository.InvoiceRepository;
+import org.example.repository.ProductForSaleRepository;
+import org.example.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,75 +24,84 @@ public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
     private final InvoiceDetailService invoiceDetailService;
+    private final ProductForSaleRepository productForSaleRepository;
+    private final ProductStockService productStockService;
     private final OrderMapper orderMapper;
+    private final UserRepository userRepository;
+
 
     @Transactional(readOnly = true)
     public List<OrderDTO> findAll() {
-        return orderMapper.toDtoList(invoiceRepository.findAll());
+        // Utiliza el metodo personalizado que incluye FETCH para cargar los detalles
+        List<Invoice> invoices = invoiceRepository.findAllWithDetails();
+        return orderMapper.toDtoList(invoices);
     }
 
     @Transactional(readOnly = true)
     public Optional<OrderDTO> findById(Long id) {
-        return invoiceRepository.findById(id)
+        // Utiliza el metodo personalizado que incluye FETCH para cargar los detalles
+        return invoiceRepository.findByIdWithDetails(id)
                 .map(orderMapper::toDto);
     }
 
-    public OrderDTO create(OrderDTO orderDTO) {
-        // Crear la factura principal
-        Invoice invoice = orderMapper.toEntity(orderDTO);
-        invoice.setDate(LocalDate.parse(orderDTO.getFecha(), DateTimeFormatter.ISO_DATE));
+    @Transactional
+    public OrderDTO createInvoiceWithDetails(OrderDTO invoiceDTO) {
+
+        // Buscar el usuario
+        User user = userRepository.findById(invoiceDTO.getUser().getId())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + invoiceDTO.getUser().getId()));
+
+
+        // Crear instancia de Invoice
+        Invoice invoice = new Invoice();
+        invoice.setDate(LocalDate.parse(invoiceDTO.getFecha()));
+        invoice.setPerson(user.getPerson());
+
         invoice.setDetails(new ArrayList<>());
-        
-        Invoice savedInvoice = invoiceRepository.save(invoice);
 
-        // Procesar los detalles
-        if (orderDTO.getDetalles() != null && !orderDTO.getDetalles().isEmpty()) {
-            for (ProductDetailDTO detailDTO : orderDTO.getDetalles()) {
-                detailDTO.setOrder(orderMapper.toDto(savedInvoice));
-                ProductDetailDTO savedDetail = invoiceDetailService.create(detailDTO);
-            }
-        }
-
-        // Recargar la factura con los detalles
-        Invoice finalInvoice = invoiceRepository.findById(savedInvoice.getId()).get();
-        return orderMapper.toDto(finalInvoice);
-    }
-
-    public OrderDTO update(Long id, OrderDTO orderDTO) {
-        Invoice existingInvoice = invoiceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Factura no encontrada con id: " + id));
-
-        // Actualizar campos básicos
-        Invoice invoice = orderMapper.toEntity(orderDTO);
-        invoice.setId(id);
-        invoice.setDate(LocalDate.parse(orderDTO.getFecha(), DateTimeFormatter.ISO_DATE));
-        invoice.setPerson(existingInvoice.getPerson()); // Mantener la persona original
-
-        // Actualizar o crear nuevos detalles
-        if (orderDTO.getDetalles() != null) {
-            List<Long> updatedDetailIds = new ArrayList<>();
-            
-            for (ProductDetailDTO detailDTO : orderDTO.getDetalles()) {
-                if (detailDTO.getId() != null) {
-                    // Actualizar detalle existente
-                    invoiceDetailService.update(detailDTO.getId(), detailDTO);
-                    updatedDetailIds.add(detailDTO.getId());
-                } else {
-                    // Crear nuevo detalle
-                    detailDTO.setOrder(orderDTO);
-                    ProductDetailDTO savedDetail = invoiceDetailService.create(detailDTO);
-                    updatedDetailIds.add(savedDetail.getId());
-                }
+        // Procesar cada detalle del JSON
+        for (ProductDetailDTO detailDTO : invoiceDTO.getDetalles()) {
+            // Buscar combinación de product y size en ProductForSale
+            Optional<ProductForSale> productForSaleOpt = productForSaleRepository
+                    .findByProductIdAndSizeId(
+                            detailDTO.getProductStock().getProduct().getId(),
+                            detailDTO.getProductStock().getSize().getId()
+                    );
+            if (productForSaleOpt.isEmpty()) {
+                throw new RuntimeException("No existe un registro de ProductForSale para el producto con ID: "
+                        + detailDTO.getProductStock().getProduct().getId()
+                        + " y talle con ID: " + detailDTO.getProductStock().getSize().getId());
             }
 
-            // Eliminar detalles que ya no están en la lista
-            existingInvoice.getDetails().stream()
-                    .filter(detail -> !updatedDetailIds.contains(detail.getId()))
-                    .forEach(detail -> invoiceDetailService.delete(detail.getId()));
+            ProductForSale productForSale = productForSaleOpt.get();
+
+            // Validar si es posible crear el detalle (suficiente stock)
+            int stockActual = productForSale.stockActualProductSize();
+            if (detailDTO.getQuantity() > stockActual) {
+                throw new RuntimeException("Stock insuficiente para el producto con ID: "
+                        + detailDTO.getProductStock().getProduct().getId()
+                        + " y talle con ID: " + detailDTO.getProductStock().getSize().getId()
+                        + ". Stock actual: " + stockActual + ", requerido: " + detailDTO.getQuantity());
+            }
+
+            // Crear y guardar el detalle
+            InvoiceDetail invoiceDetail = new InvoiceDetail();
+            invoiceDetail.setInvoice(invoice);
+            invoiceDetail.setProductForSale(productForSale);
+            invoiceDetail.setQuantity(detailDTO.getQuantity());
+            invoice.getDetails().add(invoiceDetail);
+
+            // Actualizar el stock registrando el movimiento
+            ProductStock nuevoStock = new ProductStock();
+            nuevoStock.setProductForSale(productForSale);
+            nuevoStock.setStock(stockActual - detailDTO.getQuantity());
+            productStockService.save(nuevoStock);
         }
 
-        Invoice updatedInvoice = invoiceRepository.save(invoice);
-        return orderMapper.toDto(updatedInvoice);
+        // Guardar la factura
+        invoiceRepository.save(invoice);
+
+        return orderMapper.toDto(invoice);
     }
 
     public void delete(Long id) {
