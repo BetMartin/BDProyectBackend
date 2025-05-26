@@ -7,6 +7,10 @@ public class UserDTO {
     private Long id;
     private String userName;
     private String password;
+    private int dni;
+    private String firstName;
+    private String lastName;
+    private String phone;
+    private String address;
     private RolDTO rol;
-
 }

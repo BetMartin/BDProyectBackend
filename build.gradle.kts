@@ -18,13 +18,15 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("javax.persistence:javax.persistence-api:2.2")
     runtimeOnly("mysql:mysql-connector-java:8.0.33")
+
+    //Lombok
     compileOnly ("org.projectlombok:lombok:1.18.30")
     annotationProcessor ("org.projectlombok:lombok:1.18.30")
     testCompileOnly ("org.projectlombok:lombok:1.18.30")
     testAnnotationProcessor ("org.projectlombok:lombok:1.18.30")
 
-    //MercadoPago
-    implementation("com.mercadopago:sdk-java:2.1.24")
+    //Sawgger
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
 
     //PDFs
     implementation("com.itextpdf:itext7-core:7.2.5")
@@ -35,6 +37,10 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 
+    //Map struct
+    implementation ("org.mapstruct:mapstruct:1.5.5.Final")
+    annotationProcessor ("org.mapstruct:mapstruct-processor:1.5.5.Final")
+    annotationProcessor ("org.projectlombok:lombok-mapstruct-binding:0.2.0")
 }
 
 tasks.test {
