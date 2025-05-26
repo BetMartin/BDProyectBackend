@@ -1,24 +1,27 @@
 package org.example.service;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.example.dto.ProductCategoryDTO;
 import org.example.dto.ProductDTO;
 import org.example.dto.ProductSizeDTO;
-import org.example.entity.HistoricalPrice;
-import org.example.entity.Product;
-import org.example.entity.ProductCategory;
+import org.example.entity.*;
 import org.example.mapper.ProductCategoryMapper;
 import org.example.mapper.ProductMapper;
+import org.example.repository.InvoiceRepository;
 import org.example.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.text.DateFormatSymbols;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,6 +35,7 @@ public class ProductService {
     private final PrecioHistoricoService precioHistoricoService;
     private final ProductCategoryMapper productCategoryMapper;
     private final ProductCategoryService productCategoryService;
+    private final InvoiceRepository invoiceRepository;
 
     @Transactional(readOnly = true)
     public List<ProductDTO> findAll() {
@@ -282,5 +286,118 @@ public class ProductService {
             product.getHistoricalPrices().add(historicalPrice);
             productRepository.save(product);
         }
+    }
+
+    public ByteArrayInputStream generarReporteExcel(LocalDate desde, LocalDate hasta) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            Sheet sheet = workbook.createSheet("Reporte de Ventas Mensuales");
+
+            // Estilo para encabezados
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font font = workbook.createFont();
+            font.setBold(true);
+            headerStyle.setFont(font);
+
+            // Estilo para números
+            CellStyle numberStyle = workbook.createCellStyle();
+            numberStyle.setDataFormat(workbook.createDataFormat().getFormat("#,##0.00"));
+
+            // Crear encabezados
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("Año");
+            header.createCell(1).setCellValue("Mes");
+            header.createCell(2).setCellValue("Cantidad de Ventas");
+            header.createCell(3).setCellValue("Total Ventas ($)");
+            header.createCell(4).setCellValue("Promedio por Venta ($)");
+
+            // Aplicar estilo a encabezados
+            for (Cell cell : header) {
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Obtener datos de ventas mensuales
+            List<Object[]> ventasMensuales = invoiceRepository.findVentasMensualesPorFecha(desde, hasta);
+
+            // Llenar datos
+            int rowIdx = 1;
+            for (Object[] venta : ventasMensuales) {
+                Row row = sheet.createRow(rowIdx++);
+
+                // Año
+                row.createCell(0).setCellValue(((Number) venta[0]).intValue());
+
+                // Mes
+                int mes = ((Number) venta[1]).intValue();
+                row.createCell(1).setCellValue(obtenerNombreMes(mes));
+
+                // Cantidad de ventas
+                row.createCell(2).setCellValue(((Number) venta[2]).intValue());
+
+                // Total ventas
+                Cell cellTotal = row.createCell(3);
+                cellTotal.setCellValue(((Number) venta[3]).doubleValue());
+                cellTotal.setCellStyle(numberStyle);
+
+                // Promedio por venta
+                Cell cellPromedio = row.createCell(4);
+                double promedio = ((Number) venta[3]).doubleValue() / ((Number) venta[2]).doubleValue();
+                cellPromedio.setCellValue(promedio);
+                cellPromedio.setCellStyle(numberStyle);
+            }
+
+            // Agregar fila de totales
+            Row totalRow = sheet.createRow(rowIdx);
+            totalRow.createCell(0).setCellValue("TOTAL");
+            totalRow.getCell(0).setCellStyle(headerStyle);
+
+            // Fórmulas para totales
+            Cell totalVentas = totalRow.createCell(2);
+            totalVentas.setCellFormula("SUM(C2:C" + rowIdx + ")");
+            totalVentas.setCellStyle(numberStyle);
+
+            Cell totalMonto = totalRow.createCell(3);
+            totalMonto.setCellFormula("SUM(D2:D" + rowIdx + ")");
+            totalMonto.setCellStyle(numberStyle);
+
+            Cell promedioTotal = totalRow.createCell(4);
+            promedioTotal.setCellFormula("D" + (rowIdx + 1) + "/C" + (rowIdx + 1));
+            promedioTotal.setCellStyle(numberStyle);
+
+            // Autoajustar columnas
+            for (int i = 0; i < 5; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            return new ByteArrayInputStream(out.toByteArray());
+        }
+    }
+
+    // Metodo auxiliar para convertir número de mes a nombre
+    private String obtenerNombreMes(int mes) {
+        return new DateFormatSymbols(new Locale("es", "ES")).getMonths()[mes - 1];
+    }
+
+    public ProductDTO getProductoById(Long id) {
+        Optional<Product> producto = productRepository.findById(id);
+        if (producto.isPresent()) {
+            ProductDTO productoDTO = convertirADTO(producto.get());
+            return productoDTO;
+        }
+        return null;
+    }
+
+    private ProductDTO convertirADTO(Product producto) {
+        ProductDTO dto = new ProductDTO();
+        dto.setId(producto.getId());
+        dto.setProduct(producto.getProduct());
+        dto.setBrand(producto.getBrand());
+        dto.setModel(producto.getModel());
+        dto.setImage(producto.getImage());
+        dto.setPrice(producto.precioActual().toString());
+        dto.setDescription(producto.getDescription());
+        return dto;
     }
 }
