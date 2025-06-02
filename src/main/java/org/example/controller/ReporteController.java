@@ -42,36 +42,50 @@ public class ReporteController {
 
     // Gráfico de productos por categoría (tipo torta)
     @GetMapping("/grafico-torta")
-    public List<Map<String, Object>> getGraficoCategorias() {
+    public ResponseEntity<Map<String, Object>> getGraficoCategorias() {
         List<Object[]> resultados = graficoManager.findProductosMasVendidos();
 
-        return resultados.stream()
-                .map(resultado -> {
-                    Map<String, Object> item = new HashMap<>();
-                    item.put("producto", resultado[0]);
-                    item.put("cantidad", resultado[1]);
-                    return item;
-                })
-                .collect(Collectors.toList());
+        // Crear la estructura de datos compatible con Google Charts
+        Object[][] chartData = new Object[resultados.size() + 1][];
+
+        // Definir encabezados
+        chartData[0] = new Object[]{"Producto", "Cantidad"};
+
+        // Llenar datos
+        for (int i = 0; i < resultados.size(); i++) {
+            Object[] resultado = resultados.get(i);
+            chartData[i + 1] = new Object[]{resultado[0], resultado[1]};
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("chartData", chartData);
+
+        return ResponseEntity.ok(response);
     }
 
 
     // Gráfico de ventas mensuales (tipo barra)
     @GetMapping("/grafico-barras")
-    public List<Map<String, Object>> getGraficoVentas() {
+    public ResponseEntity<Map<String, Object>> getGraficoVentas() {
         List<Object[]> resultados = graficoManager.findVentasMensuales();
 
-        return resultados.stream()
-                .map(resultado -> {
-                    Map<String, Object> item = new HashMap<>();
-                    item.put("año", resultado[0]);
-                    item.put("mes", resultado[1]);
-                    item.put("cantidadVentas", resultado[2]);
-                    item.put("totalVentas", resultado[3]);
-                    item.put("periodo", String.format("%d-%02d", resultado[0], resultado[1]));
-                    return item;
-                })
-                .collect(Collectors.toList());
+        // Crear la estructura de datos compatible con Google Charts
+        Object[][] chartData = new Object[resultados.size() + 1][];
+
+        // Definir encabezados
+        chartData[0] = new Object[]{"Periodo", "Cantidad Ventas", "Total Ventas"};
+
+        // Llenar datos
+        for (int i = 0; i < resultados.size(); i++) {
+            Object[] resultado = resultados.get(i);
+            String periodo = String.format("%d-%02d", resultado[0], resultado[1]);
+            chartData[i + 1] = new Object[]{periodo, resultado[2], resultado[3]};
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("chartData", chartData);
+
+        return ResponseEntity.ok(response);
     }
 
     // Exportar a Excel

@@ -28,8 +28,7 @@ public class OrderController {
 
     @GetMapping("/{id}")
     public ResponseEntity<OrderDTO> getOrderById(@PathVariable Long id) {
-        OrderDTO order = invoiceService.findById(id)
-                .orElseThrow(() -> new RuntimeException("Orden no encontrada con id: " + id));
+        OrderDTO order = invoiceService.findById(id);
         return ResponseEntity.ok(order);
     }
 

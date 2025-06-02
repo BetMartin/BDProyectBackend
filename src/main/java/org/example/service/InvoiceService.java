@@ -38,10 +38,11 @@ public class InvoiceService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<OrderDTO> findById(Long id) {
-        // Utiliza el metodo personalizado que incluye FETCH para cargar los detalles
+    public OrderDTO findById(Long id) {
         return invoiceRepository.findByIdWithDetails(id)
-                .map(orderMapper::toDto);
+                .map(orderMapper::toDto)
+                .orElseThrow(() -> new RuntimeException("Factura no encontrada con id: " + id));
+
     }
 
     @Transactional
