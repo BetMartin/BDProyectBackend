@@ -93,8 +93,10 @@ public class Product {
             return Collections.emptyList();
         }
         return productForSales.stream()
+                .filter(productSize -> productSize.getInvoiceDetails() != null)
                 .flatMap(productSize -> productSize.getInvoiceDetails().stream())
                 .distinct()
                 .collect(Collectors.toList());
     }
+
 }

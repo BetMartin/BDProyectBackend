@@ -25,7 +25,8 @@ public interface ProductStockMapper {
     @Mappings({
             @Mapping(source = "id", target = "id"), // El id del DTO corresponde al id de ProductForSale
             @Mapping(target = "size", source = "size"), // Mapear el tamaño desde el DTO
-            @Mapping(target = "product", source = "product") // Mapear el producto desde el DTO
+            @Mapping(target = "product", source = "product"), // Mapear el producto desde el DTO
+            @Mapping(target = "productStocks", ignore = true)
     })
     ProductForSale toEntity(ProductStockDTO dto); // Mapear de vuelta desde el DTO a la entidad
     List<ProductStockDTO> toDtoList(List<ProductForSale> productForSaleList);

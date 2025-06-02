@@ -6,6 +6,6 @@ import lombok.Data;
 public class ProductStockDTO {
     private Long id;
     private int stock;
-    private ProductDTO Product;
+    private ProductDTO product;
     private ProductSizeDTO size;
 }
