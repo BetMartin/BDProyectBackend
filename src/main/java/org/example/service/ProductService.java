@@ -142,16 +142,12 @@ public class ProductService {
     }
 
     public void delete(Long id) {
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado con id: " + id));
+    Product product = productRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Producto no encontrado con id: " + id));
+    product.setActivo(false); 
+    productRepository.save(product);
+}
 
-        // Eliminar la imagen asociada si existe
-        if (product.getImage() != null && !product.getImage().isEmpty()) {
-            imageService.deleteImage(product.getImage());
-        }
-
-        productRepository.deleteById(id);
-    }
 
     public void updatePrice(Long productId, Double newPrice) {
         Product product = productRepository.findById(productId)

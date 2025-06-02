@@ -24,6 +24,9 @@ public class Product {
     private String image;
     private String description;
 
+    @Column(nullable = false)
+    private boolean activo = true;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_category_id")
     private ProductCategory productCategory;

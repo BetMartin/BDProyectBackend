@@ -14,8 +14,12 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findByProductCategoryName(String categoryName);
 
+    List<Product> findByActivoTrue(); 
+    
     @Query("SELECT c FROM ProductCategory c WHERE c.id = :categoryId")
     Optional<ProductCategory> findCategoryById(@Param("categoryId") Long categoryId);
 
+    @Query("SELECT p FROM Product p WHERE p.productCategory.name = :categoryName AND p.activo = true")
+    List<Product> findActiveByProductCategoryName(@Param("categoryName") String categoryName);
 
 }

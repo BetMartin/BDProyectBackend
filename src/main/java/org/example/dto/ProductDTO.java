@@ -16,5 +16,5 @@ public class ProductDTO {
     private ProductCategoryDTO category;
     private List<ProductSizeDTO> sizes;
     private List<ProductDetailDTO> ProductDetail;
-
+    private boolean activo;
 }
