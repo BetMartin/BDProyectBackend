@@ -79,7 +79,7 @@ public class ProductController {
     public ResponseEntity<ProductDTO> updateProduct(
             @PathVariable Long id,
             @RequestPart(value = "product", required = true) String productJson,
-            @RequestPart(value = "file", required = true) MultipartFile file) {
+            @RequestPart(value = "file", required = false) MultipartFile file) {
         try {
             if (productJson == null || productJson.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
