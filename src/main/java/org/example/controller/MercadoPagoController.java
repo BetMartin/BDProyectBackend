@@ -9,6 +9,8 @@ import com.mercadopago.resources.preference.Preference;
 import org.example.dto.OrderDTO;
 import org.example.service.InvoiceService;
 import org.example.entity.PreferenceMP;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,19 +23,25 @@ import java.util.*;
 @RequestMapping("/api/mercadopago")
 @CrossOrigin(origins = "http://localhost:5173")
 public class MercadoPagoController {
+
+    private static final Logger logger = LoggerFactory.getLogger(MercadoPagoController.class);
+
     @Autowired
-    private InvoiceService pedidoService;
+    private InvoiceService invoiceService;
 
     @PostMapping("/crear-preferencia/{idPedido}")
-    public ResponseEntity<?> getPreferenciaIdMercadoPago(@PathVariable Long idOrder) {
+    public ResponseEntity<?> getPreferenciaIdMercadoPago(@PathVariable Long idPedido) {
         try {
-            OrderDTO pedido = pedidoService.findById(idOrder);
+            logger.info("Iniciando creación de preferencia para el pedido con ID: {}", idPedido);
+
+            OrderDTO pedido = invoiceService.findById(idPedido);
 
             if (pedido == null) {
+                logger.warn("Pedido no encontrado para el ID: {}", idPedido);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Pedido no encontrado");
             }
 
-            pedido.getTotal();
+            logger.info("Pedido encontrado: {}", pedido);
 
             MercadoPagoConfig.setAccessToken("APP_USR-5935710845811407-051518-d0bfb248902cd4e3c8d0738f587e902f-2435790313");
 
@@ -61,14 +69,20 @@ public class MercadoPagoController {
 
             PreferenceClient client = new PreferenceClient();
 
+            logger.info("Enviando solicitud a Mercado Pago para crear preferencia...");
             Preference preference = client.create(preferenceRequest);
+
             PreferenceMP mpPreference = new PreferenceMP();
             mpPreference.setStatusCode(preference.getResponse().getStatusCode());
             mpPreference.setId(preference.getId());
 
+            logger.info("Preferencia creada exitosamente con ID: {}", preference.getId());
             return ResponseEntity.ok(mpPreference);
         } catch (Exception e) {
+            logger.error("Error al crear la preferencia de Mercado Pago para el pedido con ID: {}", idPedido, e);
             Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("cause", e.getCause() != null ? e.getCause().toString() : "N/A");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
