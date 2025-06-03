@@ -10,7 +10,7 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u WHERE u.username = :username")
-    Optional<User> findByUsername(@Param("username") String username);
+    User findByUsername(@Param("username") String username);
 
     // Modificamos esta consulta para solo seleccionar los campos necesarios sin usar constructor
     @Query("SELECT DISTINCT u FROM User u WHERE u.username = :username")
@@ -23,4 +23,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.person p LEFT JOIN FETCH p.phone LEFT JOIN FETCH p.address LEFT JOIN FETCH p.rol")
     List<User> findAllWithDetails();
+
+
 }

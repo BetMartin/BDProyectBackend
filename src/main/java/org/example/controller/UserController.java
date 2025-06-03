@@ -32,6 +32,18 @@ public class UserController {
                     .body("Credenciales inválidas: " + e.getMessage());
         }
     }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> registerUser(@RequestBody UserDTO userDTO) {
+        try {
+            UserDTO createdUser = userService.createUser(userDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al registrar el usuario: " + e.getMessage());
+        }
+    }
 }
 
 
@@ -53,12 +65,5 @@ public class UserController {
 //                .orElse(ResponseEntity.notFound().build());
 //    }
 
-//    @PostMapping("/register")
-//    public ResponseEntity<UserDTO> createUser(@RequestBody UserDTO userDTO) {
-//        try {
-//            UserDTO newUser = userService.createUser(userDTO);
-//            return new ResponseEntity<>(newUser, HttpStatus.CREATED);
-//        } catch (IllegalArgumentException e) {
-//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-//        }
+
 //    }

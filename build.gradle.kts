@@ -44,6 +44,19 @@ dependencies {
 
     //MercadoPago
     implementation("com.mercadopago:sdk-java:2.1.24")
+
+    // Spring Security
+    implementation ("org.springframework.boot:spring-boot-starter-security")
+
+    // OAuth2 para autenticación social
+    implementation ("org.springframework.security:spring-security-oauth2-client")
+    implementation ("org.springframework.security:spring-security-oauth2-jose")
+
+    // Para envío de correos electrónicos
+    implementation ("org.springframework.boot:spring-boot-starter-mail")
+
+    // Thymeleaf para plantillas de email (opcional)
+    implementation ("org.springframework.boot:spring-boot-starter-thymeleaf")
 }
 
 tasks.test {

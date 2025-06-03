@@ -42,7 +42,8 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public Optional<UserDTO> findByUsername(String username) {
-        return userRepository.findByUsername(username)
+        User user = userRepository.findByUsername(username);
+        return Optional.ofNullable(user)
                 .map(userMapper::userToUserDTO);
     }
 
@@ -98,99 +99,99 @@ public class UserService {
             throw new RuntimeException("Error durante el login: " + e.getMessage());
         }
     }
+
+
+    public UserDTO mapToUserDTO(Person person) {
+        UserDTO userDTO = new UserDTO();
+
+        // Datos del usuario
+        if (person.getUser() != null) {
+            userDTO.setId(person.getUser().getUser_id());
+            userDTO.setUserName(person.getUser().getUsername());
+            userDTO.setPassword(person.getUser().getPassword());
+        }
+
+        // Datos de la persona
+        userDTO.setDni(person.getDni());
+        userDTO.setFirstName(person.getFirstName());
+        userDTO.setLastName(person.getLastName());
+
+        // Teléfono
+        if (person.getPhone() != null) {
+            userDTO.setPhone(String.valueOf(person.getPhone().getNumber()));
+        }
+
+        // Dirección usando el método getAddressStr()
+        if (person.getAddress() != null) {
+            userDTO.setAddress(person.getAddress().getAddressStr());
+        }
+
+        // Rol
+        if (person.getRol() != null) {
+            userDTO.setRol(rolMapper.toDto(person.getRol()));
+        }
+
+        return userDTO;
+    }
+
+    @Transactional(readOnly = true)
+    public UserDTO getUserByUserId(Long userId) {
+        Person person = personRepository.findByUser(userId);
+        if (person == null) {
+            throw new RuntimeException("No se encontró el usuario con ID: " + userId);
+        }
+        return mapToUserDTO(person);
+    }
+
+
+    @Transactional(readOnly = true)
+    public UserDTO createUser(UserDTO userDTO) {
+
+        // Validar datos obligatorios
+        if (userDTO.getUserName() == null || userDTO.getUserName().trim().isEmpty() ||
+                userDTO.getPassword() == null || userDTO.getPassword().trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre de usuario y la contraseña son obligatorios");
+        }
+        // Crear y configurar el usuario
+        User user = new User();
+        user.setUsername(userDTO.getUserName());
+        user.setPassword(encriptarClave(userDTO.getPassword()));
+
+        user = userRepository.save(user);
+
+        //Crear y configurar la persona
+        Person person = new Person();
+        person.setDni(userDTO.getDni());
+        person.setFirstName(userDTO.getFirstName());
+        person.setLastName(userDTO.getLastName());
+        if (userDTO.getRol() != null) {
+            person.setRol(rolMapper.toEntity(userDTO.getRol()));
+        }
+        person.setUser(user);
+
+        // Guardar la persona primero
+        Person personSaved = personRepository.save(person);
+
+
+        return userMapper.userToUserDTO(user);
+    }
+
+    private String encriptarClave(String password) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(password.getBytes());
+            StringBuilder hexString = new StringBuilder();
+
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Error al encriptar la contraseña", e);
+        }
+    }
 }
-
-
-
-//    public UserDTO mapToUserDTO(Person person) {
-//        UserDTO userDTO = new UserDTO();
-//
-//        // Datos del usuario
-//        if (person.getUser() != null) {
-//            userDTO.setId(person.getUser().getUser_id());
-//            userDTO.setUserName(person.getUser().getUsername());
-//            userDTO.setPassword(person.getUser().getPassword());
-//        }
-//
-//        // Datos de la persona
-//        userDTO.setDni(person.getDni());
-//        userDTO.setFirstName(person.getFirstName());
-//        userDTO.setLastName(person.getLastName());
-//
-//        // Teléfono
-//        if (person.getPhone() != null) {
-//            userDTO.setPhone(Integer.parseInt(person.getPhone().getNumber()));
-//        }
-//
-//        // Dirección usando el método getAddressStr()
-//        if (person.getAddress() != null) {
-//            userDTO.setAddress(person.getAddress().getAddressStr());
-//        }
-//
-//        // Rol
-//        if (person.getRol() != null) {
-//            userDTO.setRol(rolMapper.toDto(person.getRol()));
-//        }
-//
-//        return userDTO;
-//    }
-//
-//    @Transactional(readOnly = true)
-//    public UserDTO getUserByUserId(Long userId) {
-//        Person person = personRepository.findByUser(userId);
-//        if (person == null) {
-//            throw new RuntimeException("No se encontró el usuario con ID: " + userId);
-//        }
-//        return mapToUserDTO(person);
-//    }
-
-
-//    @Transactional(readOnly = true)
-//    public UserDTO createUser(UserDTO userDTO) {
-//
-//        // Validar datos obligatorios
-//        if (userDTO.getUserName() == null || userDTO.getUserName().trim().isEmpty() ||
-//                userDTO.getPassword() == null || userDTO.getPassword().trim().isEmpty()) {
-//            throw new IllegalArgumentException("El nombre de usuario y la contraseña son obligatorios");
-//        }
-//        // Crear y configurar el usuario
-//        User user = new User();
-//        user.setUsername(userDTO.getUserName());
-//        user.setPassword(encriptarClave(userDTO.getPassword()));
-//
-//        user = userRepository.save(user);
-//
-//        //Crear y configurar la persona
-//        Person person = new Person();
-//        person.setDni(userDTO.getDni());
-//        person.setFirstName(userDTO.getFirstName());
-//        person.setLastName(userDTO.getLastName());
-//        if (userDTO.getRol() != null) {
-//            person.setRol(rolMapper.toEntity(userDTO.getRol()));
-//        }
-//        person.setUser(user);
-//
-//        // Guardar la persona primero
-//        Person personSaved = personRepository.save(person);
-//
-//
-//        return userMapper.toDto(user);
-//    }
-//private String encriptarClave(String password) {
-//        try {
-//            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-//            byte[] hash = digest.digest(password.getBytes());
-//            StringBuilder hexString = new StringBuilder();
-//
-//            for (byte b : hash) {
-//                String hex = Integer.toHexString(0xff & b);
-//                if (hex.length() == 1) hexString.append('0');
-//                hexString.append(hex);
-//            }
-//
-//            return hexString.toString();
-//        } catch (NoSuchAlgorithmException e) {
-//            throw new RuntimeException("Error al encriptar la contraseña", e);
-//        }
-//    }
 

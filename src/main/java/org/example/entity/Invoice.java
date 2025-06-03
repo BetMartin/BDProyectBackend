@@ -14,10 +14,15 @@ public class Invoice {
     private Long id;
     private LocalDate date;
 
+    private String paymentId;
+    private String paymentStatus;
+    private LocalDate paymentDate;
+
     @ManyToOne
     @JoinColumn(name = "persona_id")
     @JsonIgnore
     private Person person;
+
 
     @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<InvoiceDetail> details;
