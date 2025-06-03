@@ -11,14 +11,13 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
 
     private final UserService userService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(
-            @RequestParam("userName") String username,  // Note el "userName" para que coincida con el frontend
+            @RequestParam("userName") String username,
             @RequestParam String password
     ) {
         try {

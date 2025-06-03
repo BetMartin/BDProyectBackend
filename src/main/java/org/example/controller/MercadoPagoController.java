@@ -19,7 +19,6 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/mercadopago")
-@CrossOrigin(origins = "http://localhost:5173")
 public class MercadoPagoController {
     @Autowired
     private InvoiceService pedidoService;
