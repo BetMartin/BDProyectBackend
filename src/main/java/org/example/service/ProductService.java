@@ -36,10 +36,12 @@ public class ProductService {
     private final ProductCategoryMapper productCategoryMapper;
     private final ProductCategoryService productCategoryService;
     private final InvoiceRepository invoiceRepository;
+    
+   
 
     @Transactional(readOnly = true)
     public List<ProductDTO> findAll() {
-        List<Product> products = productRepository.findAll();
+        List<Product> products = productRepository.findByActivoTrue();
 
         // Convertimos cada producto en ProductDTO y le asignamos la categoría.
         return products.stream()
@@ -79,33 +81,40 @@ public class ProductService {
         return dto;
     }
 
-    @Transactional
-    public ProductDTO create(ProductDTO productDTO, MultipartFile imagen) {
-        // Guardar la imagen y obtener su nombre
-        String imageName = null;
-        if (imagen != null && !imagen.isEmpty()) {
-            imageName = imageService.saveImage(imagen);
-        }
-
-        // Obtenemos el ID de la categoría del DTO
-        ProductCategoryDTO categoryDTO = productCategoryService.findById(productDTO.getCategory().getId());
-
-        // Crear y guardar el producto
-        Product product = productMapper.toEntity(productDTO);
-        product.setImage(imageName);
-        product.setProductCategory(productCategoryMapper.toEntity(categoryDTO));
-        Product savedProduct = productRepository.save(product);
-
-        // Crear el precio histórico inicial
-        if (productDTO.getPrice() != null && Double.parseDouble(productDTO.getPrice()) > 0) {
-            HistoricalPrice precioHistorico = new HistoricalPrice();
-            precioHistorico.setProduct(savedProduct);
-            precioHistorico.setPrice(Double.valueOf(productDTO.getPrice()));
-            precioHistoricoService.save(precioHistorico);
-        }
-
-        return productMapper.toDto(savedProduct);
+@Transactional
+public ProductDTO create(ProductDTO productDTO, MultipartFile imagen) {
+    // Guardar la imagen y obtener su nombre
+    String imageName = null;
+    if (imagen != null && !imagen.isEmpty()) {
+        imageName = imageService.saveImage(imagen);
     }
+
+    // Obtener la categoría
+    ProductCategoryDTO categoryDTO = productCategoryService.findById(productDTO.getCategory().getId());
+
+    // Crear entidad
+    Product product = productMapper.toEntity(productDTO);
+
+    // Setear valores adicionales
+    product.setImage(imageName);
+    product.setProductCategory(productCategoryMapper.toEntity(categoryDTO));
+    
+    // **Forzar activo en true para nuevo producto**
+    product.setActivo(true);
+
+    // Guardar producto
+    Product savedProduct = productRepository.save(product);
+
+    // Crear precio histórico inicial si aplica
+    if (productDTO.getPrice() != null && Double.parseDouble(productDTO.getPrice()) > 0) {
+        HistoricalPrice precioHistorico = new HistoricalPrice();
+        precioHistorico.setProduct(savedProduct);
+        precioHistorico.setPrice(Double.valueOf(productDTO.getPrice()));
+        precioHistoricoService.save(precioHistorico);
+    }
+
+    return productMapper.toDto(savedProduct);
+}
 
     public ProductDTO update(Long id, ProductDTO productDTO, MultipartFile imagen) {
         Product existingProduct = productRepository.findById(id)
@@ -141,10 +150,10 @@ public class ProductService {
         return productMapper.toDto(updatedProduct);
     }
 
-    public void delete(Long id) {
+public void delete(Long id) {
     Product product = productRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Producto no encontrado con id: " + id));
-    product.setActivo(false); 
+    product.setActivo(false); // Baja lógica
     productRepository.save(product);
 }
 
