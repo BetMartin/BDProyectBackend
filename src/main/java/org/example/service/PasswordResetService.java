@@ -36,7 +36,7 @@ public class PasswordResetService {
         log.info("Iniciando proceso de recuperación para: {}", email);
 
         try {
-            // Buscar usuarios con el mismo email - usamos findAll en lugar de findByUsername
+            // Buscar usuarios con el mismo email
             List<User> usuarios = usuarioRepository.findAllByUsername(email);
 
             if (usuarios.isEmpty()) {
@@ -48,9 +48,16 @@ public class PasswordResetService {
 
             // Usar el primer usuario encontrado
             User usuario = usuarios.get(0);
-            // Eliminar tokens anteriores
-            tokenRepository.deleteByUsuario_Username(email);
-            log.info("Tokens anteriores eliminados");
+
+            // Buscar tokens existentes y eliminarlos explícitamente
+            Optional<PasswordResetToken> existingToken = tokenRepository.findByUsuario_Username(email);
+            if (existingToken.isPresent()) {
+                tokenRepository.delete(existingToken.get());
+                log.info("Token anterior eliminado explícitamente");
+            }
+
+            // Forzar sincronización con la base de datos
+            tokenRepository.flush();
 
             // Generar nuevo token
             String token = generateSecureToken();
@@ -61,10 +68,10 @@ public class PasswordResetService {
                 firstName = usuario.getPerson().getFirstName();
             }
 
-            // Crear token
+            // Crear token nuevo
             PasswordResetToken resetToken = new PasswordResetToken(token, usuario, TOKEN_EXPIRATION_MINUTES);
             tokenRepository.save(resetToken);
-            log.info("Token guardado en base de datos: {}", token);
+            log.info("Nuevo token guardado en base de datos: {}", token);
 
             // Enviar email con try-catch interno para evitar que falle toda la transacción
             try {
@@ -78,12 +85,11 @@ public class PasswordResetService {
         }
     }
 
-        @Scheduled(cron = "0 0 */6 * * *") // Cada 6 horas
-        public void purgeExpiredTokens() {
-            tokenRepository.deleteByFechaExpiracionBefore(new Date());
-            log.info("Limpieza de tokens expirados completada");
-        }
-
+    @Scheduled(cron = "0 0 */6 * * *") // Cada 6 horas
+    public void purgeExpiredTokens() {
+        tokenRepository.deleteByFechaExpiracionBefore(new Date());
+        log.info("Limpieza de tokens expirados completada");
+    }
 
     public void updatePassword(String token, String newPassword) {
         PasswordResetToken resetToken = tokenRepository.findByToken(token)
