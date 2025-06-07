@@ -15,6 +15,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -31,37 +32,51 @@ public class PasswordResetService {
 
 
 
-        public void sendResetEmail(String email) {
-            Optional<User> usuarioOpt = usuarioRepository.findByUsername(email);
+    public void sendResetEmail(String email) {
+        log.info("Iniciando proceso de recuperación para: {}", email);
 
-            if (usuarioOpt.isEmpty()) {
-                log.warn("Intento de recuperación para email no existente: {}", email);
+        try {
+            // Buscar usuarios con el mismo email - usamos findAll en lugar de findByUsername
+            List<User> usuarios = usuarioRepository.findAllByUsername(email);
+
+            if (usuarios.isEmpty()) {
+                log.warn("Usuario no encontrado: {}", email);
                 return;
             }
 
-            User usuario = usuarioOpt.get();
+            log.info("Se encontraron {} usuarios con email {}", usuarios.size(), email);
 
-            // Elimina tokens anteriores del usuario
+            // Usar el primer usuario encontrado
+            User usuario = usuarios.get(0);
+            // Eliminar tokens anteriores
             tokenRepository.deleteByUsuario_Username(email);
+            log.info("Tokens anteriores eliminados");
 
-            // Genera un token único
+            // Generar nuevo token
             String token = generateSecureToken();
 
-            // Crea un nuevo token
+            // Prevenir NullPointerException
+            String firstName = "Usuario";
+            if (usuario.getPerson() != null && usuario.getPerson().getFirstName() != null) {
+                firstName = usuario.getPerson().getFirstName();
+            }
+
+            // Crear token
             PasswordResetToken resetToken = new PasswordResetToken(token, usuario, TOKEN_EXPIRATION_MINUTES);
             tokenRepository.save(resetToken);
+            log.info("Token guardado en base de datos: {}", token);
 
-            // Envía el email
-            emailService.sendPasswordResetEmail(usuario.getUsername(), usuario.getPerson().getFirstName(), token);
-
-            log.info("Token de recuperación creado para usuario: {}", email);
+            // Enviar email con try-catch interno para evitar que falle toda la transacción
+            try {
+                emailService.sendPasswordResetEmail(usuario.getUsername(), firstName, token);
+                log.info("Email enviado correctamente a {}", email);
+            } catch (Exception e) {
+                log.error("Error al enviar email: {}", e.getMessage(), e);
+            }
+        } catch (Exception e) {
+            log.error("Error en proceso de recuperación: {}", e.getMessage(), e);
         }
-
-        // Resto del código se mantiene igual
-
-        private String generateSecureToken() {
-            return UUID.randomUUID().toString();
-        }
+    }
 
         @Scheduled(cron = "0 0 */6 * * *") // Cada 6 horas
         public void purgeExpiredTokens() {
@@ -118,5 +133,8 @@ public class PasswordResetService {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Error al encriptar contraseña", e);
         }
+    }
+    private String generateSecureToken() {
+        return UUID.randomUUID().toString();
     }
 }

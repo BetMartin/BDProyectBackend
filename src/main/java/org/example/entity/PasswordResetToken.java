@@ -19,21 +19,26 @@ public class PasswordResetToken {
     private String token;
 
     @ManyToOne
+    @JoinColumn(name = "user_id")  // Cambia el nombre de la columna para que coincida
     private User usuario;
 
+    // Cambia el nombre del campo o agrega la anotación
+    @Column(name = "expiry_date")
     private Date fechaExpiracion;
 
-    private boolean usado;
+    private boolean usado = false;
 
+    // Constructor, getters y setters
     public PasswordResetToken() {}
+
     public PasswordResetToken(String token, User usuario, int expirationMinutes) {
         this.token = token;
         this.usuario = usuario;
-        this.usado = false;
 
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.MINUTE, expirationMinutes);
-        this.fechaExpiracion = calendar.getTime();
+        // Asegúrate de que fechaExpiracion se establezca correctamente
+        Calendar calendario = Calendar.getInstance();
+        calendario.add(Calendar.MINUTE, expirationMinutes);
+        this.fechaExpiracion = calendario.getTime();
     }
 
     public boolean isExpired() {

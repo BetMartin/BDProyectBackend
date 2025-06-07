@@ -18,13 +18,13 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${spring.mail.username}")
+    @Value("${mail.from.email}")
     private String fromEmail;
 
-    @Value("${mail.from.name:Tu Aplicación}")
+    @Value("${mail.from.name}")
     private String fromName;
 
-    @Value("${mail.base.url:http://localhost:5173}")
+    @Value("${mail.base.url}")
     private String baseUrl;
 
     public void sendPasswordResetEmail(String email, String nombre, String token) {
