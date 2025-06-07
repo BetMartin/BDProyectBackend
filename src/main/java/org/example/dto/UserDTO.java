@@ -11,6 +11,11 @@ public class UserDTO {
     private String firstName;
     private String lastName;
     private String phone;
+    private String apartment;
+    private String street;
+    private Integer streetNumber;
+    private Long provinceId;
+    private String provinceName;
     private String address;
     private RolDTO rol;
 }

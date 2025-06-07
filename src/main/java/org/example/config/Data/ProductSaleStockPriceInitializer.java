@@ -1,4 +1,4 @@
-package org.example.config;
+package org.example.config.Data;
 
 import org.example.entity.ProductForSale;
 import org.example.entity.ProductStock;

@@ -6,13 +6,15 @@ import org.example.dto.ProductDetailDTO;
 import org.example.entity.*;
 import org.example.mapper.OrderMapper;
 import org.example.repository.InvoiceRepository;
+import org.example.repository.OrderStatusRepository;
 import org.example.repository.ProductForSaleRepository;
 import org.example.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.example.entity.Invoice;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +30,13 @@ public class InvoiceService {
     private final ProductStockService productStockService;
     private final OrderMapper orderMapper;
     private final UserRepository userRepository;
+    private final OrderStatusRepository orderStatusRepository;
+    private final ProductService productService;
 
+    // Buscar pedido por ID
+    public Optional<Invoice> findById(Long id) {
+        return invoiceRepository.findByIdWithDetails(id);
+    }
 
     @Transactional(readOnly = true)
     public List<OrderDTO> findAll() {
@@ -38,7 +46,7 @@ public class InvoiceService {
     }
 
     @Transactional(readOnly = true)
-    public OrderDTO findById(Long id) {
+    public OrderDTO findByIdDTO(Long id) {
         return invoiceRepository.findByIdWithDetails(id)
                 .map(orderMapper::toDto)
                 .orElseThrow(() -> new RuntimeException("Factura no encontrada con id: " + id));
@@ -144,5 +152,34 @@ public class InvoiceService {
         if (invoice.getDetails() == null || invoice.getDetails().isEmpty()) {
             throw new IllegalArgumentException("La factura debe tener al menos un detalle");
         }
+    }
+
+    // Actualizar estado del pedido
+    public Invoice actualizarEstadoPedido(Long pedidoId, String nuevoEstado) {
+
+        Invoice pedido = invoiceRepository.findById(pedidoId)
+                .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado"));
+
+        // Crear nuevo registro de estado
+        OrderStatus nuevoEstadoPedido = new OrderStatus(nuevoEstado, pedido);
+        orderStatusRepository.save(nuevoEstadoPedido);
+
+        // Si el pedido se cancela, devolver el stock
+        if ("CANCELADO".equals(nuevoEstado)) {
+            for (InvoiceDetail detalle : pedido.getDetails()) {
+                ProductForSale productForSale = detalle.getProductForSale();
+                Integer stockActual = productForSale.stockActualProductSize();
+
+                // Crear nuevo registro de stock para devolver la cantidad
+                ProductStock nuevoStock = new ProductStock();
+                nuevoStock.setProductForSale(productForSale);
+                nuevoStock.setDate(LocalDate.now());
+                nuevoStock.setStock(stockActual + detalle.getQuantity());
+
+                // Guardar el nuevo stock
+                productStockService.save(nuevoStock);
+            }
+        }
+        return pedido;
     }
 }

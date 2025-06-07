@@ -1,4 +1,4 @@
-package org.example.config;
+package org.example.config.Data;
 import org.example.entity.Product;
 import org.example.repository.ProductRepository;
 import org.example.repository.ProductCategoryRepository;

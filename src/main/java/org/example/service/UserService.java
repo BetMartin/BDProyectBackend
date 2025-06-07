@@ -3,12 +3,13 @@ package org.example.service;
 import lombok.RequiredArgsConstructor;
 import org.example.dto.RolDTO;
 import org.example.dto.UserDTO;
+import org.example.entity.Address;
 import org.example.entity.Person;
+import org.example.entity.Phone;
 import org.example.entity.User;
 import org.example.mapper.RolMapper;
 import org.example.mapper.UserMapper;
-import org.example.repository.PersonRepository;
-import org.example.repository.UserRepository;
+import org.example.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,9 @@ public class UserService {
     private final UserMapper userMapper;
     private final RolMapper rolMapper;
     private final PersonRepository personRepository;
+    private final AddressRepository addressRepository;
+    private final PhoneRepository phoneRepository;
+    private final ProvinceRepository provinceRepository;
 
     @Transactional(readOnly = true)
     public List<UserDTO> findAll() {
@@ -97,6 +101,50 @@ public class UserService {
         } catch (Exception e) {
             throw new RuntimeException("Error durante el login: " + e.getMessage());
         }
+    }
+
+    @Transactional
+    public UserDTO createUser(UserDTO userDTO) {
+        // Validar datos obligatorios
+        if (userDTO.getUserName() == null || userDTO.getUserName().trim().isEmpty() ||
+                userDTO.getPassword() == null || userDTO.getPassword().trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre de usuario y la contraseña son obligatorios");
+        }
+
+        // Crear y configurar el usuario
+        User user = new User();
+        user.setUsername(userDTO.getUserName());
+        user.setPassword(user.encriptarClave(userDTO.getPassword()));
+        user = userRepository.save(user);
+
+        // Crear y configurar la persona
+        Person person = new Person();
+        person.setDni(userDTO.getDni());
+        person.setFirstName(userDTO.getFirstName());
+        person.setLastName(userDTO.getLastName());
+        person.setRol(rolMapper.toEntity(userDTO.getRol()));
+        person.setUser(user);
+
+        // Crear y configurar el teléfono
+        Phone phone = new Phone();
+        phone.setNumber(userDTO.getPhone());
+        phone = phoneRepository.save(phone);
+        person.setPhone(phone);
+
+        // Crear y configurar la dirección
+        Address address = new Address();
+        address.setApartment(userDTO.getApartment());
+        address.setStreet(userDTO.getStreet());
+        address.setStreetNumber(userDTO.getStreetNumber());
+        address.setProvince(provinceRepository.findById(userDTO.getProvinceId())
+                .orElseThrow(() -> new IllegalArgumentException("Provincia no encontrada")));
+        address = addressRepository.save(address);
+        person.setAddress(address);
+
+        // Guardar la persona
+        personRepository.save(person);
+
+        return userMapper.userToUserDTO(user);
     }
 }
 

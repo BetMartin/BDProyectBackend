@@ -1,4 +1,4 @@
-package org.example.config;
+package org.example.config.Data;
 
 import org.example.entity.ProductCategory;
 import org.example.entity.Size;

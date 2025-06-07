@@ -16,9 +16,6 @@ public class ImageService {
 
     private Path uploadDir =Paths.get("uploads/img");
 
-    /**
-     * Inicializa el directorio de imágenes si no existe
-     */
     @PostConstruct
     public void setUp() {
         try {
@@ -33,9 +30,6 @@ public class ImageService {
     }
 
 
-    /**
-     * Guarda una imagen y retorna el nombre del archivo generado
-     */
     public String saveImage(MultipartFile file) {
         validateImage(file);
         
@@ -65,9 +59,7 @@ public class ImageService {
         }
     }
 
-    /**
-     * Elimina una imagen del directorio
-     */
+
     public void deleteImage(String filename) {
         try {
             Path file = uploadDir.resolve(filename);
@@ -79,32 +71,24 @@ public class ImageService {
         }
     }
 
-    /**
-     * Obtiene la ruta completa de una imagen
-     */
+
     public Path getImagePath(String filename) {
         return uploadDir.resolve(filename).normalize();
     }
 
-    /**
-     * Verifica si una imagen existe
-     */
+
     public boolean imageExists(String filename) {
         Path file = uploadDir.resolve(filename);
         return Files.exists(file);
     }
 
-    /**
-     * Genera un nombre único para el archivo
-     */
+
     private String generateUniqueFilename(String originalFilename) {
         String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
         return UUID.randomUUID().toString() + extension;
     }
 
-    /**
-     * Valida el archivo de imagen
-     */
+
     private void validateImage(MultipartFile file) {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("El archivo está vacío");
@@ -122,9 +106,7 @@ public class ImageService {
         }
     }
 
-    /**
-     * Verifica si el tipo de contenido corresponde a una imagen
-     */
+
     private boolean isImageContentType(String contentType) {
         return contentType.equals("image/jpeg") ||
                contentType.equals("image/png") ||

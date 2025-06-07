@@ -32,6 +32,18 @@ public class UserController {
                     .body("Credenciales inválidas: " + e.getMessage());
         }
     }
+    @PostMapping("/register")
+    public ResponseEntity<?> registerUser(@RequestBody UserDTO userDTO) {
+        try {
+            UserDTO newUser = userService.createUser(userDTO);
+            return new ResponseEntity<>(newUser, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
 }
 
 

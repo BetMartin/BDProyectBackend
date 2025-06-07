@@ -1,14 +1,12 @@
 package org.example.controller;
 
-import com.mercadopago.MercadoPagoConfig;
-import com.mercadopago.client.preference.PreferenceBackUrlsRequest;
-import com.mercadopago.client.preference.PreferenceClient;
-import com.mercadopago.client.preference.PreferenceItemRequest;
-import com.mercadopago.client.preference.PreferenceRequest;
-import com.mercadopago.resources.preference.Preference;
-import org.example.dto.OrderDTO;
+import com.mercadopago.exceptions.MPApiException;
+import com.mercadopago.exceptions.MPException;
+import org.example.dto.MercadoPagoResponseDTO;
+import org.example.dto.PaymentDTO;
+import org.example.entity.Payment;
 import org.example.service.InvoiceService;
-import org.example.entity.PreferenceMP;
+import org.example.service.PaymentService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.*;
 
 @RestController
@@ -29,61 +26,73 @@ public class MercadoPagoController {
     @Autowired
     private InvoiceService invoiceService;
 
-    @PostMapping("/crear-preferencia/{idPedido}")
-    public ResponseEntity<?> getPreferenciaIdMercadoPago(@PathVariable Long idPedido) {
+    @Autowired
+    private PaymentService paymentService;
+
+    @PostMapping("/crear/{idPedido}")
+    public ResponseEntity<?> crearPago(@PathVariable Long idPedido) {
         try {
-            logger.info("Iniciando creación de preferencia para el pedido con ID: {}", idPedido);
+            Map<String, String> datosPago = paymentService.crearPago(idPedido);
 
-            OrderDTO pedido = invoiceService.findById(idPedido);
-
-            if (pedido == null) {
-                logger.warn("Pedido no encontrado para el ID: {}", idPedido);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Pedido no encontrado");
-            }
-
-            logger.info("Pedido encontrado: {}", pedido);
-
-            MercadoPagoConfig.setAccessToken("APP_USR-5935710845811407-051518-d0bfb248902cd4e3c8d0738f587e902f-2435790313");
-
-            PreferenceItemRequest itemRequest = PreferenceItemRequest.builder()
-                    .id(UUID.randomUUID().toString())
-                    .title("Pedido")
-                    .description("Pedido realizado desde el carrito de compras")
-                    .quantity(1)
-                    .currencyId("ARS")
-                    .unitPrice(new BigDecimal(pedido.getTotal()))
+            MercadoPagoResponseDTO response = MercadoPagoResponseDTO.builder()
+                    .preferenceId(datosPago.get("preference_id"))
+                    .initPoint(datosPago.get("init_point"))
+                    .sandboxInitPoint(datosPago.get("sandbox_init_point"))
                     .build();
 
-            List<PreferenceItemRequest> items = Collections.singletonList(itemRequest);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            logger.error("Error al crear pago: {}", e.getMessage());
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        } catch (MPException | MPApiException e) {
+            logger.error("Error de Mercado Pago: {}", e.getMessage(), e);
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Error al procesar el pago con Mercado Pago");
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
 
-            PreferenceBackUrlsRequest backURL = PreferenceBackUrlsRequest.builder()
-                    .success("http://localhost:5173/success")
-                    .pending("http://localhost:5173/failure")
-                    .failure("http://localhost:5173/pending")
-                    .build();
-
-            PreferenceRequest preferenceRequest = PreferenceRequest.builder()
-                    .items(items)
-                    .backUrls(backURL)
-                    .build();
-
-            PreferenceClient client = new PreferenceClient();
-
-            logger.info("Enviando solicitud a Mercado Pago para crear preferencia...");
-            Preference preference = client.create(preferenceRequest);
-
-            PreferenceMP mpPreference = new PreferenceMP();
-            mpPreference.setStatusCode(preference.getResponse().getStatusCode());
-            mpPreference.setId(preference.getId());
-
-            logger.info("Preferencia creada exitosamente con ID: {}", preference.getId());
-            return ResponseEntity.ok(mpPreference);
+    @GetMapping("/pedido/{idPedido}")
+    public ResponseEntity<List<PaymentDTO>> obtenerPagosPorPedido(@PathVariable Long idPedido) {
+        try {
+            List<Payment> pagos = paymentService.obtenerPagosPorPedido(idPedido);
+            List<PaymentDTO> response = paymentService.mapToDTO(pagos);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            logger.error("Error al crear la preferencia de Mercado Pago para el pedido con ID: {}", idPedido, e);
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("message", e.getMessage());
-            errorResponse.put("cause", e.getCause() != null ? e.getCause().toString() : "N/A");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+            logger.error("Error al obtener pagos para el pedido {}: {}", idPedido, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @PostMapping("/webhook")
+    public ResponseEntity<?> webhookMercadoPago(
+            @RequestParam(value = "topic", required = false) String topic,
+            @RequestParam(value = "id", required = false) String id,
+            @RequestParam(value = "preference_id", required = false) String preferenceId,
+            @RequestParam(value = "status", required = false) String status,
+            @RequestBody(required = false) String body) {
+
+        logger.info("Webhook recibido - Topic: {}, ID: {}, Preference: {}, Status: {}",
+                topic, id, preferenceId, status);
+
+        if (preferenceId != null && status != null) {
+            paymentService.procesarNotificacion(preferenceId, status);
+        }
+
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{pagoId}")
+    public ResponseEntity<?> obtenerPago(@PathVariable Long pagoId) {
+        try {
+            return paymentService.findById(pagoId)
+                    .map(pago -> ResponseEntity.ok(paymentService.mapToDTO(pago)))
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (Exception e) {
+            logger.error("Error al obtener pago {}: {}", pagoId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", e.getMessage()));
         }
     }
 }

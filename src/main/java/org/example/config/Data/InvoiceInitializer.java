@@ -1,4 +1,4 @@
-package org.example.config;
+package org.example.config.Data;
 
 import org.example.entity.Invoice;
 import org.example.entity.InvoiceDetail;

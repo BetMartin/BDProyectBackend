@@ -44,6 +44,10 @@ dependencies {
 
     //MercadoPago
     implementation("com.mercadopago:sdk-java:2.1.24")
+
+    //Email
+    implementation ("org.springframework.boot:spring-boot-starter-mail")
+
 }
 
 tasks.test {
